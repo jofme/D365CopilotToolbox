@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxResource xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>COTXCopilotHostControl_JS</Name>
+	<FileName>COTXCopilotHostControl.js</FileName>
+	<RelativeUriInModelStore>CopilotToolbox\Copilot Toolbox\AxResource\ResourceContent\Scripts\COTXCopilotHostControl.js</RelativeUriInModelStore>
+	<TypeOfResource>Scripts</TypeOfResource>
+</AxResource>

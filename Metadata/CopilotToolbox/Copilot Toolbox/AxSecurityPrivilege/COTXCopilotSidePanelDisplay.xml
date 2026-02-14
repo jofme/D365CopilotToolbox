@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxSecurityPrivilege xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>COTXCopilotSidePanelDisplay</Name>
+	<Label>@CopilotToolbox:COTXCopilotSidePanelDisplay</Label>
+	<DataEntityPermissions />
+	<DirectAccessPermissions />
+	<EntryPoints>
+		<AxSecurityEntryPointReference>
+			<Name>COTXCopilotHostSidePanel</Name>
+			<Grant>
+				<Read>Allow</Read>
+			</Grant>
+			<ObjectName>COTXCopilotHostSidePanel</ObjectName>
+			<ObjectType>MenuItemDisplay</ObjectType>
+			<Forms />
+		</AxSecurityEntryPointReference>
+	</EntryPoints>
+	<FormControlOverrides />
+</AxSecurityPrivilege>

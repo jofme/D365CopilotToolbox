@@ -1,0 +1,281 @@
+(function () {
+    'use strict';
+
+    var COPILOT_SDK_URL = 'https://unpkg.com/@microsoft/agents-copilotstudio-client@1.2.3/dist/src/browser.mjs';
+
+    var STYLE_OPTIONS = {
+        accent: '#7B68EE',
+        autoScrollSnapOnPage: true,
+        autoScrollSnapOnPageOffset: 0,
+        backgroundColor: '#FFFFFF',
+        bubbleBackground: '#F5F5F5',
+        bubbleBorderColor: '#E0E0E0',
+        bubbleBorderRadius: 12,
+        bubbleBorderStyle: 'solid',
+        bubbleBorderWidth: 0,
+        bubbleTextColor: '#1A1A1A',
+        bubbleNubSize: 0,
+        bubbleNubOffset: 0,
+        bubbleFromUserBackground: '#E8E0FF',
+        bubbleFromUserBorderColor: '#D4C8FF',
+        bubbleFromUserBorderRadius: 12,
+        bubbleFromUserBorderStyle: 'solid',
+        bubbleFromUserBorderWidth: 0,
+        bubbleFromUserTextColor: '#1A1A1A',
+        bubbleFromUserNubSize: 0,
+        bubbleFromUserNubOffset: 0,
+        bubbleMaxWidth: 980,
+        bubbleMinWidth: 120,
+        bubbleMinHeight: 40,
+        sendBoxBackground: '#F5F5F5',
+        sendBoxBorderTop: 'none',
+        sendBoxBorderRadius: 24,
+        sendBoxButtonColor: '#7B68EE',
+        sendBoxButtonColorOnDisabled: '#CCCCCC',
+        sendBoxButtonColorOnFocus: '#6A5ACD',
+        sendBoxButtonColorOnHover: '#6A5ACD',
+        sendBoxHeight: 50,
+        sendBoxPlaceholderColor: '#767676',
+        sendBoxTextColor: '#1A1A1A',
+        hideUploadButton: false,
+        suggestedActionBackgroundColor: '#FFFFFF',
+        suggestedActionBackgroundColorOnHover: '#F0EBFF',
+        suggestedActionBorderColor: '#7B68EE',
+        suggestedActionBorderRadius: 20,
+        suggestedActionBorderWidth: 1,
+        suggestedActionTextColor: '#7B68EE',
+        suggestedActionTextColorOnHover: '#6A5ACD',
+        suggestedActionLayout: 'flow',
+        suggestedActionHeight: 36,
+        paddingRegular: 12,
+        paddingWide: 16,
+        groupTimestamp: false,
+        subtleColor: '#767676',
+        timestampColor: '#767676',
+        typingAnimationHeight: 20,
+        typingAnimationWidth: 64,
+        rootHeight: '100%',
+        rootWidth: '100%',
+        hideScrollToEndButton: false,
+        markdownRenderHTML: true
+    };
+
+    var MAX_RENDER_ATTEMPTS = 60;
+
+    var waitingForBotReply = false;
+
+    // -----------------------------------------------------------------------
+    // Token acquisition via MSAL.js (delegated permissions — no secret needed)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Acquires a delegated user token for the Power Platform API using MSAL.js.
+     * Tries silent acquisition first (leveraging the D365 Entra ID session),
+     * then falls back to a popup if interaction is required.
+     *
+     * @param {string} appClientId  - App registration client ID (SPA / public client)
+     * @param {string} tenantId     - Entra ID tenant ID
+     * @returns {Promise<string>}   - The access token
+     */
+    function acquireToken(appClientId, tenantId) {
+        var msalConfig = {
+            auth: {
+                clientId: appClientId,
+                authority: 'https://login.microsoftonline.com/' + tenantId
+            },
+            cache: {
+                cacheLocation: 'sessionStorage'
+            }
+        };
+
+        var msalInstance = new msal.PublicClientApplication(msalConfig);
+
+        var loginRequest = {
+            scopes: ['https://api.powerplatform.com/.default'],
+            redirectUri: window.location.origin
+        };
+
+        return msalInstance.initialize().then(function () {
+            var accounts = msalInstance.getAllAccounts();
+
+            if (accounts.length > 0) {
+                // Try silent token acquisition using existing session
+                return msalInstance.acquireTokenSilent({
+                    scopes: loginRequest.scopes,
+                    account: accounts[0],
+                    redirectUri: loginRequest.redirectUri
+                }).then(function (response) {
+                    return response.accessToken;
+                }).catch(function (silentError) {
+                    // Silent failed — fall back to popup
+                    console.warn('COTXCopilotHostControl: Silent token failed, trying popup', silentError);
+                    return msalInstance.acquireTokenPopup(loginRequest).then(function (response) {
+                        return response.accessToken;
+                    });
+                });
+            }
+
+            // No cached accounts — use popup
+            return msalInstance.acquireTokenPopup(loginRequest).then(function (response) {
+                return response.accessToken;
+            });
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // WebChat store middleware — injects ERP context into outgoing messages
+    // -----------------------------------------------------------------------
+
+    function createStore(data) {
+        var shouldSendContext = function () {
+            return !!$dyn.value(data.SendContext);
+        };
+
+        return window.WebChat.createStore({}, function () {
+            return function (next) {
+                return function (action) {
+                    if (action.type === 'DIRECT_LINE/POST_ACTIVITY'
+                        && action.payload.activity.type === 'message'
+                        && shouldSendContext()) {
+
+                        var activity = action.payload.activity;
+
+                        action = Object.assign({}, action, {
+                            payload: Object.assign({}, action.payload, {
+                                activity: Object.assign({}, activity, {
+                                    channelData: Object.assign({}, activity.channelData, {
+                                        context: {
+                                            userLanguage: $dyn.value(data.UserLanguage),
+                                            userTimeZone: $dyn.value(data.UserTimeZone),
+                                            callingMethod: $dyn.value(data.CallingMethod),
+                                            legalEntity: $dyn.value(data.LegalEntity),
+                                            currentUser: $dyn.value(data.UserId),
+                                            currentForm: $dyn.value(data.CurrentFormName),
+                                            currentMenuItem: $dyn.value(data.CurrentMenuItem),
+                                            formMode: $dyn.value(data.FormMode),
+                                            currentRecord: {
+                                                tableName: $dyn.value(data.TableName),
+                                                naturalKey: $dyn.value(data.NaturalKey),
+                                                naturalValue: $dyn.value(data.NaturalValue)
+                                            }
+                                        }
+                                    })
+                                })
+                            })
+                        });
+                    }
+
+                    // Capture incoming agent responses — only when X++ initiated the message
+                    if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
+                        var activity = action.payload.activity;
+
+                        if (activity.type === 'message'
+                            && activity.from.role === 'bot'
+                            && activity.text
+                            && waitingForBotReply) {
+
+                            waitingForBotReply = false;
+                            $dyn.callFunction(data.RaiseAgentResponse, null, [activity.text]);
+                        }
+                    }
+
+                    return next(action);
+                };
+            };
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Copilot Studio connection via Agent SDK
+    // -----------------------------------------------------------------------
+
+    function createCopilotConnection(token, environmentId, agentId) {
+        return import(COPILOT_SDK_URL).then(function (sdk) {
+            var settings = {
+                environmentId: environmentId,
+                agentIdentifier: agentId
+            };
+
+            var client = new sdk.CopilotStudioClient(settings, token);
+
+            return sdk.CopilotStudioWebChat.createConnection(client, {
+                typingIndicator: true
+            });
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // D365 F&O Extensible Control Registration
+    // -----------------------------------------------------------------------
+
+    $dyn.controls.COTXCopilotHostControl = function (data, element) {
+        $dyn.ui.Control.apply(this, arguments);
+        $dyn.ui.applyDefaults(this, data, $dyn.ui.defaults.COTXCopilotHostControl);
+    };
+
+    $dyn.controls.COTXCopilotHostControl.prototype = $dyn.ui.extendPrototype($dyn.ui.Control.prototype, {
+        init: function (data, element) {
+            $dyn.ui.Control.prototype.init.apply(this, arguments);
+
+            function tryRender(attempt) {
+                var webChatReady = element
+                    && window.WebChat
+                    && window.WebChat.renderWebChat
+                    && window.WebChat.createStore
+                    && window.msal;
+
+                if (!webChatReady) {
+                    if (attempt < MAX_RENDER_ATTEMPTS) {
+                        requestAnimationFrame(function () { tryRender(attempt + 1); });
+                    }
+                    return;
+                }
+
+                var appClientId = $dyn.value(data.AppClientId);
+                var tenantId = $dyn.value(data.TenantId);
+                var environmentId = $dyn.value(data.EnvironmentId);
+                var agentId = $dyn.value(data.AgentIdentifier);
+
+                acquireToken(appClientId, tenantId)
+                    .then(function (token) {
+                        return createCopilotConnection(token, environmentId, agentId);
+                    })
+                    .then(function (directLine) {
+                        var store = createStore(data);
+
+                        window.WebChat.renderWebChat({
+                            directLine: directLine,
+                            styleOptions: STYLE_OPTIONS,
+                            store: store
+                        }, element);
+
+                        // Observe PendingMessage — when X++ sets it, send it through WebChat
+                        $dyn.observe(data.PendingMessage, function (message) {
+                            if (!message) {
+                                return;
+                            }
+
+                            waitingForBotReply = true;
+
+                            store.dispatch({
+                                type: 'WEB_CHAT/SEND_MESSAGE',
+                                payload: { text: message }
+                            });
+
+                            $dyn.callFunction(
+                                $dyn.observable(data.PendingMessage),
+                                null,
+                                ['']
+                            );
+                        });
+
+                    })
+                    .catch(function (e) {
+                        console.error('COTXCopilotHostControl: Error initializing', e);
+                    });
+            }
+
+            tryRender(0);
+        }
+    });
+})();

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxSecurityPrivilege xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>COTXCopilotParameterView</Name>
+	<Label>@CopilotToolbox:COTXCopilotParameterView</Label>
+	<DataEntityPermissions />
+	<DirectAccessPermissions />
+	<EntryPoints>
+		<AxSecurityEntryPointReference>
+			<Name>COTXCopilotHostFormContextParameters</Name>
+			<Grant>
+				<Read>Allow</Read>
+			</Grant>
+			<ObjectName>COTXCopilotHostFormContextParameters</ObjectName>
+			<ObjectType>MenuItemDisplay</ObjectType>
+			<Forms />
+		</AxSecurityEntryPointReference>
+	</EntryPoints>
+	<FormControlOverrides />
+</AxSecurityPrivilege>

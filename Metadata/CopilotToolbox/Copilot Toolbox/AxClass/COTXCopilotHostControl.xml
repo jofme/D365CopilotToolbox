@@ -1,0 +1,493 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>COTXCopilotHostControl</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+using Newtonsoft.Json.Linq;
+
+/// <summary>
+/// Custom form control that hosts a Copilot chat interface using the M365 Agent SDK.
+/// Token acquisition happens browser-side via MSAL.js (delegated permissions).
+/// </summary>
+[
+    FormControlAttribute(
+        'COTXCopilotHostControl',
+        'resources/html/COTXCopilotHostControl.html',
+        classStr(COTXCopilotHostControlBuild))
+]
+public final class COTXCopilotHostControl extends FormTemplateControl
+{
+    FormProperty appClientId;
+    FormProperty tenantId;
+    FormProperty environmentId;
+    FormProperty agentIdentifier;
+    FormProperty userId;
+    FormProperty userName;
+    FormProperty legalEntity;
+    FormProperty currentFormName;
+    FormProperty currentMenuItem;
+    FormProperty formMode;
+    FormProperty tableName;
+    FormProperty naturalKey;
+    FormProperty naturalValue;
+    FormProperty userLanguage;
+    FormProperty userTimeZone;
+    FormProperty callingMethod;
+    FormProperty sendContext;
+    FormProperty pendingMessage;
+    FormProperty agentResponse;
+
+
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    public void new(FormBuildControl _build, FormRun _formRun)
+    {
+        super(_build, _formRun);
+
+        this.setTemplateId('COTXCopilotHostControl');
+        this.setResourceBundleName('resources/html/COTXCopilotHostControl.html');
+
+        // Copilot Studio connection (public — no secrets)
+        appClientId     = this.addProperty(methodstr(COTXCopilotHostControl, parmAppClientId), Types::String);
+        tenantId        = this.addProperty(methodstr(COTXCopilotHostControl, parmTenantId), Types::String);
+        environmentId   = this.addProperty(methodstr(COTXCopilotHostControl, parmEnvironmentId), Types::String);
+        agentIdentifier = this.addProperty(methodstr(COTXCopilotHostControl, parmAgentIdentifier), Types::String);
+
+        // User identity
+        userId          = this.addProperty(methodstr(COTXCopilotHostControl, parmUserId), Types::String);
+        userName        = this.addProperty(methodstr(COTXCopilotHostControl, parmUserNamen), Types::String);
+
+        // ERP context
+        legalEntity     = this.addProperty(methodstr(COTXCopilotHostControl, parmLegalEntity), Types::String);
+        currentFormName = this.addProperty(methodstr(COTXCopilotHostControl, parmCurrentFormName), Types::String);
+        currentMenuItem = this.addProperty(methodstr(COTXCopilotHostControl, parmCurrentMenuItem), Types::String);
+        formMode        = this.addProperty(methodstr(COTXCopilotHostControl, parmFormMode), Types::String);
+        tableName       = this.addProperty(methodstr(COTXCopilotHostControl, parmTableName), Types::String);
+        naturalKey      = this.addProperty(methodstr(COTXCopilotHostControl, parmNaturalKey), Types::String);
+        naturalValue    = this.addProperty(methodstr(COTXCopilotHostControl, parmNaturalValue), Types::String);
+
+        // Session context
+        userLanguage    = this.addProperty(methodstr(COTXCopilotHostControl, parmUserLanguage), Types::String);
+        userTimeZone    = this.addProperty(methodstr(COTXCopilotHostControl, parmUserTimeZone), Types::String);
+        callingMethod   = this.addProperty(methodstr(COTXCopilotHostControl, parmCallingMethod), Types::String);
+
+        sendContext     = this.addProperty(methodstr(COTXCopilotHostControl, parmSendContext), Types::String);
+        
+        pendingMessage = this.addProperty(methodstr(COTXCopilotHostControl, parmPendingMessage), Types::String);
+
+        agentResponse = this.addProperty(methodstr(COTXCopilotHostControl, parmAgentResponse), Types::String);
+
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>applyBuild</Name>
+				<Source><![CDATA[
+    public void applyBuild()
+    {
+        super();
+
+        COTXCopilotHostControlBuild build = this.build();
+
+        this.initializeControl(build.parmCopilotContext());
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>initializeControl</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Initializes the control by reading config values and passing them to the browser.
+    /// No server-side token acquisition — that's handled by MSAL.js in the browser.
+    /// </summary>
+    public void initializeControl(str _copilotContext)
+    {
+        SysUserInfo sysUserInfo = SysUserInfo::find();
+
+        if (_copilotContext && COTXCopilotHostFormContextParameters::exist(_copilotContext))
+        {
+            COTXCopilotHostFormContextParameters contextParams = COTXCopilotHostFormContextParameters::find(_copilotContext);
+
+            this.parmAppClientId(contextParams.AppClientId);
+            this.parmTenantId(contextParams.TenantId);
+            this.parmEnvironmentId(contextParams.CopilotEnvironmentId);
+            this.parmAgentIdentifier(contextParams.CopilotAgentIdentifier);
+
+            this.parmUserId(sysUserInfo.Id);
+            this.parmUserNamen(sysUserInfo.Id);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmAppClientId</Name>
+				<Source><![CDATA[
+    // === Copilot Studio connection properties ===
+
+    [FormPropertyAttribute(FormPropertyKind::Value, "AppClientId", true)]
+    private str parmAppClientId(str _value = appClientId.parmValue())
+    {
+        if (!prmIsDefault(_value))
+        {
+            appClientId.setValueOrBinding(_value);
+            return appClientId.parmValue();
+        }
+        return _value;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTenantId</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "TenantId", true)]
+    private str parmTenantId(str _value = tenantId.parmValue())
+    {
+        if (!prmIsDefault(_value))
+        {
+            tenantId.setValueOrBinding(_value);
+            return tenantId.parmValue();
+        }
+        return _value;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmEnvironmentId</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "EnvironmentId", true)]
+    private str parmEnvironmentId(str _value = environmentId.parmValue())
+    {
+        if (!prmIsDefault(_value))
+        {
+            environmentId.setValueOrBinding(_value);
+            return environmentId.parmValue();
+        }
+        return _value;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmAgentIdentifier</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "AgentIdentifier", true)]
+    private str parmAgentIdentifier(str _value = agentIdentifier.parmValue())
+    {
+        if (!prmIsDefault(_value))
+        {
+            agentIdentifier.setValueOrBinding(_value);
+            return agentIdentifier.parmValue();
+        }
+        return _value;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmUserId</Name>
+				<Source><![CDATA[
+    // === User identity (unchanged) ===
+
+    [FormPropertyAttribute(FormPropertyKind::Value, "UserId")]
+    public str parmUserId(str _userId = userId.parmValue())
+    {
+        if (!prmIsDefault(_userId))
+        {
+            userId.setValueOrBinding(_userId);
+            return userId.parmValue();
+        }
+        return _userId;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmUserNamen</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "UserName")]
+    public str parmUserNamen(str _userName = userName.parmValue())
+    {
+        if (!prmIsDefault(_userName))
+        {
+            userName.setValueOrBinding(_userName);
+            return userName.parmValue();
+        }
+        return _userName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmLegalEntity</Name>
+				<Source><![CDATA[
+    // === ERP context properties (all unchanged) ===
+
+    [FormPropertyAttribute(FormPropertyKind::Value, "LegalEntity")]
+    public str parmLegalEntity(str _legalEntity = legalEntity.parmValue())
+    {
+        if (!prmIsDefault(_legalEntity))
+        {
+            legalEntity.setValueOrBinding(_legalEntity);
+            return legalEntity.parmValue();
+        }
+        return _legalEntity;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCurrentFormName</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "CurrentFormName")]
+    public str parmCurrentFormName(str _currentFormName = currentFormName.parmValue())
+    {
+        if (!prmIsDefault(_currentFormName))
+        {
+            currentFormName.setValueOrBinding(_currentFormName);
+            return currentFormName.parmValue();
+        }
+        return _currentFormName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCurrentMenuItem</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "CurrentMenuItem")]
+    public str parmCurrentMenuItem(str _currentMenuItem = currentMenuItem.parmValue())
+    {
+        if (!prmIsDefault(_currentMenuItem))
+        {
+            currentMenuItem.setValueOrBinding(_currentMenuItem);
+            return currentMenuItem.parmValue();
+        }
+        return _currentMenuItem;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmFormMode</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "FormMode")]
+    public str parmFormMode(str _formMode = formMode.parmValue())
+    {
+        if (!prmIsDefault(_formMode))
+        {
+            formMode.setValueOrBinding(_formMode);
+            return formMode.parmValue();
+        }
+        return _formMode;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmTableName</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "TableName")]
+    public str parmTableName(str _tableName = tableName.parmValue())
+    {
+        if (!prmIsDefault(_tableName))
+        {
+            tableName.setValueOrBinding(_tableName);
+            return tableName.parmValue();
+        }
+        return _tableName;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmNaturalKey</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "NaturalKey")]
+    public str parmNaturalKey(str _naturalKey = naturalKey.parmValue())
+    {
+        if (!prmIsDefault(_naturalKey))
+        {
+            naturalKey.setValueOrBinding(_naturalKey);
+            return naturalKey.parmValue();
+        }
+        return _naturalKey;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmNaturalValue</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "NaturalValue")]
+    public str parmNaturalValue(str _naturalValue = naturalValue.parmValue())
+    {
+        if (!prmIsDefault(_naturalValue))
+        {
+            naturalValue.setValueOrBinding(_naturalValue);
+            return naturalValue.parmValue();
+        }
+        return _naturalValue;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmUserLanguage</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "UserLanguage")]
+    public str parmUserLanguage(str _userLanguage = userLanguage.parmValue())
+    {
+        if (!prmIsDefault(_userLanguage))
+        {
+            userLanguage.setValueOrBinding(_userLanguage);
+            return userLanguage.parmValue();
+        }
+        return _userLanguage;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmUserTimeZone</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "UserTimeZone")]
+    public str parmUserTimeZone(str _userTimeZone = userTimeZone.parmValue())
+    {
+        if (!prmIsDefault(_userTimeZone))
+        {
+            userTimeZone.setValueOrBinding(_userTimeZone);
+            return userTimeZone.parmValue();
+        }
+        return _userTimeZone;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmCallingMethod</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "CallingMethod")]
+    public str parmCallingMethod(str _callingMethod = callingMethod.parmValue())
+    {
+        if (!prmIsDefault(_callingMethod))
+        {
+            callingMethod.setValueOrBinding(_callingMethod);
+            return callingMethod.parmValue();
+        }
+        return _callingMethod;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmSendContext</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "SendContext")]
+    public str parmSendContext(str _sendContext = sendContext.parmValue())
+    {
+        if (!prmIsDefault(_sendContext))
+        {
+            sendContext.setValueOrBinding(_sendContext);
+            return sendContext.parmValue();
+        }
+        return _sendContext;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>sendMessage</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Sends a message to the active Copilot chat session.
+    /// The message is picked up by the JS layer and dispatched through WebChat.
+    /// </summary>
+    /// <param name="_message">The message text to send.</param>
+    public void sendMessage(str _message)
+    {
+        if (_message)
+        {
+            this.parmPendingMessage(_message);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmPendingMessage</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "PendingMessage")]
+    public str parmPendingMessage(str _value = pendingMessage.parmValue())
+    {
+        if (!prmIsDefault(_value))
+        {
+            pendingMessage.setValueOrBinding(_value);
+            return pendingMessage.parmValue();
+        }
+        return _value;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmAgentResponse</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets or sets the latest agent response text, written from JS when the agent replies.
+    /// </summary>
+    [FormPropertyAttribute(FormPropertyKind::Value, "AgentResponse")]
+    public str parmAgentResponse(str _value = agentResponse.parmValue())
+    {
+        if (!prmIsDefault(_value))
+        {
+            agentResponse.setValueOrBinding(_value);
+            return agentResponse.parmValue();
+        }
+        return _value;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>raiseAgentResponse</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Called from JavaScript when the agent sends a response.
+    /// Raises the OnAgentResponse event so form-level handlers can react.
+    /// </summary>
+    /// <param name="_responseText">The agent's response text.</param>
+    [FormCommandAttribute("RaiseAgentResponse", false)]
+    private void raiseAgentResponse(str _responseText)
+    {
+        this.parmAgentResponse(_responseText);
+        this.onAgentResponse(this, _responseText);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>onAgentResponse</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Delegate event raised when the Copilot agent sends a response.
+    /// Subscribe from form code to react to agent replies.
+    /// </summary>
+    delegate void onAgentResponse(COTXCopilotHostControl _sender, str _responseText)
+    {
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

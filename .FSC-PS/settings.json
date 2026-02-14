@@ -1,0 +1,7 @@
+{
+  "type": "FSCM",
+  "packageName": "D365CopilotToolbox",
+  "buildVersion": "10.0.45",
+  "ciBranches": "main,release",
+  "deploymentScheduler": false
+}

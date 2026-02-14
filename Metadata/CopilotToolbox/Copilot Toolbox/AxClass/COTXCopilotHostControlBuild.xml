@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>COTXCopilotHostControlBuild</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+[FormDesignControlAttribute("COTX Copilot Agent Host Control")]
+public final class COTXCopilotHostControlBuild extends FormBuildControl
+{
+    COTXCopilotHostContextId copilotHostContextId;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>parmCopilotContext</Name>
+				<Source><![CDATA[
+    [FormDesignPropertyAttribute("Copilot Context", "COTX")]
+    public COTXCopilotHostContextId parmCopilotContext(COTXCopilotHostContextId _copilotHostContextId = copilotHostContextId)
+    {
+        if (!prmIsDefault(_copilotHostContextId))
+        {
+            copilotHostContextId = _copilotHostContextId;
+        }
+        return copilotHostContextId;
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

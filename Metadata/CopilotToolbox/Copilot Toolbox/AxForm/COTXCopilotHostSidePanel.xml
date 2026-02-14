@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxForm xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>COTXCopilotHostSidePanel</Name>
+	<SourceCode>
+		<Methods xmlns="">
+			<Method>
+				<Name>classDeclaration</Name>
+				<Source><![CDATA[
+[Form]
+public class COTXCopilotHostSidePanel extends FormRun
+{
+
+}
+]]></Source>
+			</Method>
+			<Method>
+				<Name>init</Name>
+				<Source><![CDATA[
+    public void init()
+    {
+        // Rendering hint that it should show as a pane on the right side
+        // of the product without saved views and is not recordable by
+        // task recorder
+        this.setDisplayTarget(FormDisplayTarget::AsidePane);
+        this.disableSavedViewsOnForm();
+
+        super();
+
+        this.setIsRecordable(false);
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+		<DataSources xmlns="" />
+		<DataControls xmlns="" />
+		<Members xmlns="" />
+	</SourceCode>
+	<DataSources />
+	<Design>
+		<Caption xmlns="">@CopilotToolbox:COTXCopilotAgent</Caption>
+		<DialogSize xmlns="">Medium</DialogSize>
+		<Pattern xmlns="">Custom</Pattern>
+		<Style xmlns="">Dialog</Style>
+		<Controls xmlns="">
+			<AxFormControl>
+				<Name>CopilotHostControl</Name>
+				<HeightMode>SizeToAvailable</HeightMode>
+				<WidthMode>SizeToAvailable</WidthMode>
+				<FormControlExtension>
+					<Name>COTXCopilotHostControl</Name>
+					<ExtensionComponents />
+					<ExtensionProperties>
+						<AxFormControlExtensionProperty>
+							<Name>parmCopilotContext</Name>
+							<Type>ExtendedDataType</Type>
+							<TypeName>COTXCopilotHostContextId</TypeName>
+							<Value>SidePanel</Value>
+						</AxFormControlExtensionProperty>
+					</ExtensionProperties>
+				</FormControlExtension>
+			</AxFormControl>
+		</Controls>
+	</Design>
+	<Parts />
+</AxForm>

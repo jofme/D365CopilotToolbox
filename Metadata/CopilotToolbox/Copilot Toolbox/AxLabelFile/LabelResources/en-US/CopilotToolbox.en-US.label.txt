@@ -1,0 +1,17 @@
+﻿NewLabel0=Label files created on 02/12/2026 22:00:04 for label file Id CopilotToolbox and language en-US
+ ;Label file comment - see above label
+COTXCopilotContext=Copilot Context
+COTXCopilotHostContextId=Copilot Context Id
+COTXDirectLineSecretKey=DirectLine Secret
+COTXCopilotHostFormContextParameters=Copilot Context Parameters
+COTXCopilotEnvironment=Copilot Environment
+COTXCopilotAgent=Copilot Agent
+COTXEntraId=Entra Id
+COTXCopilotSidePanelDisplay=Use Copilot side panel
+COTXCopilotParameterView=View Copilot parameters
+COTXCopilotParameterMaintain=Maintain Copilot parameters
+COTXCopilotParameterSecretView=View Copilot secrets
+COTXCopilotUserDuty=Copilot user
+COTXCopilotAdminDuty=Copilot administrator
+COTXCopilotUserRole=Copilot user role
+COTXCopilotAdminRole=Copilot administrator role

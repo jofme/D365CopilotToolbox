@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxMenuExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V1">
+	<Name>SysMenuSettings.CopilotToolbox</Name>
+	<Customizations />
+	<Elements>
+		<AxMenuExtensionElement xmlns="">
+			<MenuElement xmlns=""
+				i:type="AxMenuElementMenuItem">
+				<Name>COTXCopilotHostSidePanel</Name>
+				<MenuItemName>COTXCopilotHostSidePanel</MenuItemName>
+			</MenuElement>
+		</AxMenuExtensionElement>
+	</Elements>
+	<MenuElementModifications />
+	<PropertyModifications />
+</AxMenuExtension>
