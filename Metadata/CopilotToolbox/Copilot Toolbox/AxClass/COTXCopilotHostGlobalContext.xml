@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>COTXCopilotHostGlobalContext</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+internal final class COTXCopilotHostGlobalContext
+{
+    COTXCopilotHostFormContext formContext;
+    boolean shouldTrackGlobalContext;
+
+    private static COTXCopilotHostGlobalContext instance;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    protected void new()
+    {
+        shouldTrackGlobalContext = COTXCopilotAgentParameters::trackGlobalContext();
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>getInstance</Name>
+				<Source><![CDATA[
+    public static COTXCopilotHostGlobalContext getInstance()
+    {
+        if (!instance)
+        {
+            instance = new COTXCopilotHostGlobalContext();
+        }
+
+        return instance;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>handleFormActivation</Name>
+				<Source><![CDATA[
+    public void handleFormActivation(FormRun _formRun)
+    {
+        if (!shouldTrackGlobalContext)
+        {
+            return;
+        }
+
+        if (!_formRun.args()
+            || _formRun.args().menuItemName() == "")
+        {
+            return;
+        }
+
+        //A more performant option might be to check if Args exists. Need to check this
+        if (!_formRun.isRootNavigable())
+        {
+            return;
+        }
+
+        if (formContext)
+        {
+            if (formContext.curFormName == _formRun.name())
+            {
+                return;
+            }
+
+            formContext.onFormContextChange -= eventhandler(this.formContextActive);
+        }
+
+        formContext = COTXCopilotHostFormContext::construct(_formRun);
+
+        if (formContext.tableName != "")
+        {
+            formContext.onFormContextChange += eventhandler(this.formContextActive);
+            this.formContextActive(formContext);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>forceFireOnChangeEvent</Name>
+				<Source><![CDATA[
+    public void forceFireOnChangeEvent()
+    {
+        if (formContext)
+        {
+            this.formContextActive(formContext);
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>formActivated</Name>
+				<Source><![CDATA[
+    [SubscribesTo(classstr(Info), delegatestr(Info, onActivate))]
+    internal static void formActivated(FormRun _formRun, Info info)
+    {
+        COTXCopilotHostGlobalContext::getInstance().handleFormActivation(_formRun);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>formContextActive</Name>
+				<Source><![CDATA[
+    private void formContextActive(COTXCopilotHostFormContext _sender)
+    {
+        this.onFormContextChange(_sender);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>onFormContextChange</Name>
+				<Source><![CDATA[
+    delegate void onFormContextChange(COTXCopilotHostFormContext _sender)
+    {
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

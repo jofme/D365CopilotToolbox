@@ -53,9 +53,15 @@ public class COTXCopilotHostSidePanel extends FormRun
 					<ExtensionProperties>
 						<AxFormControlExtensionProperty>
 							<Name>parmCopilotContext</Name>
-							<Type>ExtendedDataType</Type>
-							<TypeName>COTXCopilotHostContextId</TypeName>
+							<Type>Enum</Type>
+							<TypeName>COTXCopilotAgentApplicationArea</TypeName>
 							<Value>SidePanel</Value>
+						</AxFormControlExtensionProperty>
+						<AxFormControlExtensionProperty>
+							<Name>parmContextScopeType</Name>
+							<Type>Enum</Type>
+							<TypeName>COTXCopilotAgentContextScopeType</TypeName>
+							<Value>Global</Value>
 						</AxFormControlExtensionProperty>
 					</ExtensionProperties>
 				</FormControlExtension>

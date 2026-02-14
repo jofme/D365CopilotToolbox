@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxFormExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns="Microsoft.Dynamics.AX.Metadata.V6">
+	<Name>SalesTable.CopilotToolboxExamples</Name>
+	<ControlModifications />
+	<Controls>
+		<AxFormExtensionControl xmlns="">
+			<Name>FormExtensionControlbemtqukr1</Name>
+			<FormControl xmlns=""
+				i:type="AxFormTabPageControl">
+				<Name>CTXECopilotAgent</Name>
+				<Type>TabPage</Type>
+				<FormControlExtension
+					i:nil="true" />
+				<Controls>
+					<AxFormControl>
+						<Name>CTXECopilotAgentHost</Name>
+						<Height>400</Height>
+						<HeightMode>Manual</HeightMode>
+						<WidthMode>SizeToAvailable</WidthMode>
+						<FormControlExtension>
+							<Name>COTXCopilotHostControl</Name>
+							<ExtensionComponents />
+							<ExtensionProperties>
+								<AxFormControlExtensionProperty>
+									<Name>parmCopilotContext</Name>
+									<Type>Enum</Type>
+									<TypeName>COTXCopilotAgentApplicationArea</TypeName>
+									<Value>CTXESalesTable</Value>
+								</AxFormControlExtensionProperty>
+								<AxFormControlExtensionProperty>
+									<Name>parmContextScopeType</Name>
+									<Type>Enum</Type>
+									<TypeName>COTXCopilotAgentContextScopeType</TypeName>
+									<Value>Local</Value>
+								</AxFormControlExtensionProperty>
+							</ExtensionProperties>
+						</FormControlExtension>
+					</AxFormControl>
+				</Controls>
+				<Caption>Copilot Agent</Caption>
+			</FormControl>
+			<Parent>LineViewTab</Parent>
+			<PositionType>Begin</PositionType>
+		</AxFormExtensionControl>
+	</Controls>
+	<DataSourceModifications />
+	<DataSourceReferences />
+	<DataSources />
+	<Parts />
+	<PropertyModifications>
+		<AxPropertyModification xmlns="">
+			<Name>Pattern</Name>
+			<Value>Custom</Value>
+		</AxPropertyModification>
+	</PropertyModifications>
+</AxFormExtension>

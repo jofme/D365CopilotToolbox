@@ -128,7 +128,7 @@
 
     function createStore(data) {
         var shouldSendContext = function () {
-            return !!$dyn.value(data.SendContext);
+            return !!$dyn.peek(data.SendContext);
         };
 
         return window.WebChat.createStore({}, function () {
@@ -145,18 +145,18 @@
                                 activity: Object.assign({}, activity, {
                                     channelData: Object.assign({}, activity.channelData, {
                                         context: {
-                                            userLanguage: $dyn.value(data.UserLanguage),
-                                            userTimeZone: $dyn.value(data.UserTimeZone),
-                                            callingMethod: $dyn.value(data.CallingMethod),
-                                            legalEntity: $dyn.value(data.LegalEntity),
-                                            currentUser: $dyn.value(data.UserId),
-                                            currentForm: $dyn.value(data.CurrentFormName),
-                                            currentMenuItem: $dyn.value(data.CurrentMenuItem),
-                                            formMode: $dyn.value(data.FormMode),
+                                            userLanguage: $dyn.peek(data.UserLanguage),
+                                            userTimeZone: $dyn.peek(data.UserTimeZone),
+                                            callingMethod: $dyn.peek(data.CallingMethod),
+                                            legalEntity: $dyn.peek(data.LegalEntity),
+                                            currentUser: $dyn.peek(data.UserId),
+                                            currentForm: $dyn.peek(data.CurrentFormName),
+                                            currentMenuItem: $dyn.peek(data.CurrentMenuItem),
+                                            formMode: $dyn.peek(data.FormMode),
                                             currentRecord: {
-                                                tableName: $dyn.value(data.TableName),
-                                                naturalKey: $dyn.value(data.NaturalKey),
-                                                naturalValue: $dyn.value(data.NaturalValue)
+                                                tableName: $dyn.peek(data.TableName),
+                                                naturalKey: $dyn.peek(data.NaturalKey),
+                                                naturalValue: $dyn.peek(data.NaturalValue)
                                             }
                                         }
                                     })
@@ -211,11 +211,17 @@
     $dyn.controls.COTXCopilotHostControl = function (data, element) {
         $dyn.ui.Control.apply(this, arguments);
         $dyn.ui.applyDefaults(this, data, $dyn.ui.defaults.COTXCopilotHostControl);
+        
+        // Store references for cleanup
+        this._directLine = null;
+        this._element = element;
     };
 
     $dyn.controls.COTXCopilotHostControl.prototype = $dyn.ui.extendPrototype($dyn.ui.Control.prototype, {
         init: function (data, element) {
             $dyn.ui.Control.prototype.init.apply(this, arguments);
+            
+            var self = this;
 
             function tryRender(attempt) {
                 var webChatReady = element
@@ -236,11 +242,18 @@
                 var environmentId = $dyn.value(data.EnvironmentId);
                 var agentId = $dyn.value(data.AgentIdentifier);
 
+                if (!appClientId || !tenantId || !environmentId || !agentId) {
+                    return;
+                }
+
                 acquireToken(appClientId, tenantId)
                     .then(function (token) {
                         return createCopilotConnection(token, environmentId, agentId);
                     })
                     .then(function (directLine) {
+                        // Store DirectLine reference for cleanup
+                        self._directLine = directLine;
+                        
                         var store = createStore(data);
 
                         window.WebChat.renderWebChat({

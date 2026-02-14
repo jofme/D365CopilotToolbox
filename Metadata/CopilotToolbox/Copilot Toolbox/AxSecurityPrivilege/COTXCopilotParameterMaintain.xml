@@ -6,7 +6,7 @@
 	<DirectAccessPermissions />
 	<EntryPoints>
 		<AxSecurityEntryPointReference>
-			<Name>COTXCopilotHostFormContextParameters</Name>
+			<Name>COTXCopilotAgentParameters</Name>
 			<Grant>
 				<Correct>Allow</Correct>
 				<Create>Allow</Create>
@@ -14,9 +14,15 @@
 				<Read>Allow</Read>
 				<Update>Allow</Update>
 			</Grant>
-			<ObjectName>COTXCopilotHostFormContextParameters</ObjectName>
+			<ObjectName>COTXCopilotAgentParameters</ObjectName>
 			<ObjectType>MenuItemDisplay</ObjectType>
-			<Forms />
+			<Forms>
+				<AxSecurityEntryPointReferenceForm>
+					<Name>COTXCopilotAgentParameters</Name>
+					<Controls />
+					<DataSources />
+				</AxSecurityEntryPointReferenceForm>
+			</Forms>
 		</AxSecurityEntryPointReference>
 	</EntryPoints>
 	<FormControlOverrides />

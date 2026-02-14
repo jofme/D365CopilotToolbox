@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <BuildTasksDirectory Condition=" '$(BuildTasksDirectory)' == ''">$(MSBuildProgramFiles32)\MSBuild\Microsoft\Dynamics\AX</BuildTasksDirectory>
+    <Model>Copilot Toolbox</Model>
+    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <OutputPath>bin</OutputPath>
+    <SchemaVersion>2.0</SchemaVersion>
+    <GenerateCrossReferences>True</GenerateCrossReferences>
+    <RunAppCheckerRules>False</RunAppCheckerRules>
+    <LogAppcheckerDiagsAsErrors>False</LogAppcheckerDiagsAsErrors>
+    <DeployOnline>False</DeployOnline>
+    <ProjectGuid>{7fd49df8-b6b9-4f6d-a3af-b4aa7bb8041e}</ProjectGuid>
+    <Name>CopilotAgentHost</Name>
+    <RootNamespace>CopilotAgentHost</RootNamespace>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|AnyCPU'">
+    <Configuration>Debug</Configuration>
+    <DBSyncInBuild>False</DBSyncInBuild>
+    <GenerateFormAdaptors>False</GenerateFormAdaptors>
+    <Company>
+    </Company>
+    <Partition>initial</Partition>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <DataEntityExpandParentChildRelations>False</DataEntityExpandParentChildRelations>
+    <DataEntityUseLabelTextAsFieldName>False</DataEntityUseLabelTextAsFieldName>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <DebugSymbols>true</DebugSymbols>
+    <EnableUnmanagedDebugging>false</EnableUnmanagedDebugging>
+  </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="Base Enums\" />
+    <Folder Include="Classes\" />
+    <Folder Include="Display Menu Items\" />
+    <Folder Include="EDT Enums\" />
+    <Folder Include="EDT Strings\" />
+    <Folder Include="Extended Data Types\" />
+    <Folder Include="Forms\" />
+    <Folder Include="Label Files\" />
+    <Folder Include="Menu Extensions\" />
+    <Folder Include="Resources\" />
+    <Folder Include="Security Duties\" />
+    <Folder Include="Security Privileges\" />
+    <Folder Include="Security Roles\" />
+    <Folder Include="Tables\" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="AxClass\COTXCopilotHostControl">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostControl</Name>
+      <Link>Classes\COTXCopilotHostControl</Link>
+    </Content>
+    <Content Include="AxClass\COTXCopilotHostControlBuild">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostControlBuild</Name>
+      <Link>Classes\COTXCopilotHostControlBuild</Link>
+    </Content>
+    <Content Include="AxClass\COTXCopilotHostFormContext">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostFormContext</Name>
+      <Link>Classes\COTXCopilotHostFormContext</Link>
+    </Content>
+    <Content Include="AxClass\COTXCopilotHostGlobalContext">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostGlobalContext</Name>
+      <Link>Classes\COTXCopilotHostGlobalContext</Link>
+    </Content>
+    <Content Include="AxEdt\COTXCopilotAgentDataverseEnvironment">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotAgentDataverseEnvironment</Name>
+      <Link>EDT Strings\COTXCopilotAgentDataverseEnvironment</Link>
+    </Content>
+    <Content Include="AxEdt\COTXCopilotAgentSchemaName">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotAgentSchemaName</Name>
+      <Link>EDT Strings\COTXCopilotAgentSchemaName</Link>
+    </Content>
+    <Content Include="AxEdt\COTXCopilotEntraIdAppRegId">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotEntraIdAppRegId</Name>
+      <Link>EDT Strings\COTXCopilotEntraIdAppRegId</Link>
+    </Content>
+    <Content Include="AxEdt\COTXCopilotEntraIdTenantId">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotEntraIdTenantId</Name>
+      <Link>EDT Strings\COTXCopilotEntraIdTenantId</Link>
+    </Content>
+    <Content Include="AxEdt\COTXCopilotHostContextId">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostContextId</Name>
+      <Link>Extended Data Types\COTXCopilotHostContextId</Link>
+    </Content>
+    <Content Include="AxEdt\COTXCopilotSendGlobalContext">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotSendGlobalContext</Name>
+      <Link>EDT Enums\COTXCopilotSendGlobalContext</Link>
+    </Content>
+    <Content Include="AxEdt\COTXDirectLineSecretKey">
+      <SubType>Content</SubType>
+      <Name>COTXDirectLineSecretKey</Name>
+      <Link>Extended Data Types\COTXDirectLineSecretKey</Link>
+    </Content>
+    <Content Include="AxEnum\COTXCopilotAgentApplicationArea">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotAgentApplicationArea</Name>
+      <Link>Base Enums\COTXCopilotAgentApplicationArea</Link>
+    </Content>
+    <Content Include="AxEnum\COTXCopilotAgentContextScopeType">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotAgentContextScopeType</Name>
+      <Link>Base Enums\COTXCopilotAgentContextScopeType</Link>
+    </Content>
+    <Content Include="AxForm\COTXCopilotAgentParameters">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotAgentParameters</Name>
+      <Link>Forms\COTXCopilotAgentParameters</Link>
+    </Content>
+    <Content Include="AxForm\COTXCopilotHostSidePanel">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostSidePanel</Name>
+      <Link>Forms\COTXCopilotHostSidePanel</Link>
+    </Content>
+    <Content Include="AxLabelFile\CopilotToolbox_en-US">
+      <SubType>Content</SubType>
+      <Name>CopilotToolbox_en-US</Name>
+      <Link>Label Files\CopilotToolbox_en-US</Link>
+    </Content>
+    <Content Include="AxMenuExtension\SysMenuSettings.CopilotToolbox">
+      <SubType>Content</SubType>
+      <Name>SysMenuSettings.CopilotToolbox</Name>
+      <Link>Menu Extensions\SysMenuSettings.CopilotToolbox</Link>
+    </Content>
+    <Content Include="AxMenuExtension\SystemAdministration.CopilotToolbox">
+      <SubType>Content</SubType>
+      <Name>SystemAdministration.CopilotToolbox</Name>
+      <Link>Menu Extensions\SystemAdministration.CopilotToolbox</Link>
+    </Content>
+    <Content Include="AxMenuItemDisplay\COTXCopilotAgentParameters">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotAgentParameters</Name>
+      <Link>Display Menu Items\COTXCopilotAgentParameters</Link>
+    </Content>
+    <Content Include="AxMenuItemDisplay\COTXCopilotHostSidePanel">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostSidePanel</Name>
+      <Link>Display Menu Items\COTXCopilotHostSidePanel</Link>
+    </Content>
+    <Content Include="AxResource\COTXCopilotHostControl_CSS">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostControl_CSS</Name>
+      <Link>Resources\COTXCopilotHostControl_CSS</Link>
+    </Content>
+    <Content Include="AxResource\COTXCopilotHostControl_HTML">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostControl_HTML</Name>
+      <Link>Resources\COTXCopilotHostControl_HTML</Link>
+    </Content>
+    <Content Include="AxResource\COTXCopilotHostControl_JS">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostControl_JS</Name>
+      <Link>Resources\COTXCopilotHostControl_JS</Link>
+    </Content>
+    <Content Include="AxSecurityDuty\COTXCopilotAdminDuty">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotAdminDuty</Name>
+      <Link>Security Duties\COTXCopilotAdminDuty</Link>
+    </Content>
+    <Content Include="AxSecurityDuty\COTXCopilotUserDuty">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotUserDuty</Name>
+      <Link>Security Duties\COTXCopilotUserDuty</Link>
+    </Content>
+    <Content Include="AxSecurityPrivilege\COTXCopilotParameterMaintain">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotParameterMaintain</Name>
+      <Link>Security Privileges\COTXCopilotParameterMaintain</Link>
+    </Content>
+    <Content Include="AxSecurityPrivilege\COTXCopilotParameterView">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotParameterView</Name>
+      <Link>Security Privileges\COTXCopilotParameterView</Link>
+    </Content>
+    <Content Include="AxSecurityPrivilege\COTXCopilotSidePanelDisplay">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotSidePanelDisplay</Name>
+      <Link>Security Privileges\COTXCopilotSidePanelDisplay</Link>
+    </Content>
+    <Content Include="AxSecurityRole\COTXCopilotAdminRole">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotAdminRole</Name>
+      <Link>Security Roles\COTXCopilotAdminRole</Link>
+    </Content>
+    <Content Include="AxSecurityRole\COTXCopilotUserRole">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotUserRole</Name>
+      <Link>Security Roles\COTXCopilotUserRole</Link>
+    </Content>
+    <Content Include="AxTable\COTXCopilotAgentApplicationAreas">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotAgentApplicationAreas</Name>
+      <Link>Tables\COTXCopilotAgentApplicationAreas</Link>
+    </Content>
+    <Content Include="AxTable\COTXCopilotAgentParameters">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotAgentParameters</Name>
+      <Link>Tables\COTXCopilotAgentParameters</Link>
+    </Content>
+    <Content Include="CopilotToolbox.en-US.label.txt">
+      <SubType>Content</SubType>
+      <Name>CopilotToolbox.en-US.label.txt</Name>
+      <DependentUpon>AxLabelFile\CopilotToolbox_en-US</DependentUpon>
+    </Content>
+    <Content Include="COTXCopilotHostControl.css">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostControl.css</Name>
+      <DependentUpon>AxResource\COTXCopilotHostControl_CSS</DependentUpon>
+    </Content>
+    <Content Include="COTXCopilotHostControl.html">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostControl.html</Name>
+      <DependentUpon>AxResource\COTXCopilotHostControl_HTML</DependentUpon>
+    </Content>
+    <Content Include="COTXCopilotHostControl.js">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostControl.js</Name>
+      <DependentUpon>AxResource\COTXCopilotHostControl_JS</DependentUpon>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets" />
+  <Import Project="$(BuildTasksDirectory)\Microsoft.Dynamics.Framework.Tools.BuildTasks.17.0.targets" />
+</Project>

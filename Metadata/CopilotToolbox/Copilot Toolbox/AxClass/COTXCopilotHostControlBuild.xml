@@ -6,7 +6,8 @@
 [FormDesignControlAttribute("COTX Copilot Agent Host Control")]
 public final class COTXCopilotHostControlBuild extends FormBuildControl
 {
-    COTXCopilotHostContextId copilotHostContextId;
+    COTXCopilotAgentApplicationArea     copilotApplicationArea;
+    COTXCopilotAgentContextScopeType    contextScopeType;
 
 }
 ]]></Declaration>
@@ -14,14 +15,29 @@ public final class COTXCopilotHostControlBuild extends FormBuildControl
 			<Method>
 				<Name>parmCopilotContext</Name>
 				<Source><![CDATA[
-    [FormDesignPropertyAttribute("Copilot Context", "COTX")]
-    public COTXCopilotHostContextId parmCopilotContext(COTXCopilotHostContextId _copilotHostContextId = copilotHostContextId)
+    [FormDesignPropertyAttribute("Application Area", "COTX")]
+    public COTXCopilotAgentApplicationArea parmCopilotContext(COTXCopilotAgentApplicationArea _copilotApplicationArea = copilotApplicationArea)
     {
-        if (!prmIsDefault(_copilotHostContextId))
+        if (!prmIsDefault(_copilotApplicationArea))
         {
-            copilotHostContextId = _copilotHostContextId;
+            copilotApplicationArea = _copilotApplicationArea;
         }
-        return copilotHostContextId;
+        return copilotApplicationArea;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmContextScopeType</Name>
+				<Source><![CDATA[
+    [FormDesignPropertyAttribute("Copilot Context Scope", "COTX")]
+    public COTXCopilotAgentContextScopeType parmContextScopeType(COTXCopilotAgentContextScopeType _contextScopeType = contextScopeType)
+    {
+        if (!prmIsDefault(_contextScopeType))
+        {
+            contextScopeType = _contextScopeType;
+        }
+        return contextScopeType;
     }
 
 ]]></Source>

@@ -37,7 +37,8 @@ public final class COTXCopilotHostControl extends FormTemplateControl
     FormProperty pendingMessage;
     FormProperty agentResponse;
 
-
+    COTXCopilotHostControlBuild buildControl;
+    COTXCopilotHostFormContext  formContext;
 
 }
 ]]></Declaration>
@@ -93,9 +94,9 @@ public final class COTXCopilotHostControl extends FormTemplateControl
     {
         super();
 
-        COTXCopilotHostControlBuild build = this.build();
+        buildControl = this.build();
 
-        this.initializeControl(build.parmCopilotContext());
+        this.initializeControl(buildControl.parmCopilotContext());
     }
 
 ]]></Source>
@@ -107,21 +108,40 @@ public final class COTXCopilotHostControl extends FormTemplateControl
     /// Initializes the control by reading config values and passing them to the browser.
     /// No server-side token acquisition — that's handled by MSAL.js in the browser.
     /// </summary>
-    public void initializeControl(str _copilotContext)
+    public void initializeControl(COTXCopilotAgentApplicationArea _applicationArea)
     {
         SysUserInfo sysUserInfo = SysUserInfo::find();
+        COTXCopilotAgentParameters agentParameters = COTXCopilotAgentParameters::findForApplicationArea(_applicationArea);
 
-        if (_copilotContext && COTXCopilotHostFormContextParameters::exist(_copilotContext))
+        if (agentParameters)
         {
-            COTXCopilotHostFormContextParameters contextParams = COTXCopilotHostFormContextParameters::find(_copilotContext);
-
-            this.parmAppClientId(contextParams.AppClientId);
-            this.parmTenantId(contextParams.TenantId);
-            this.parmEnvironmentId(contextParams.CopilotEnvironmentId);
-            this.parmAgentIdentifier(contextParams.CopilotAgentIdentifier);
+            this.parmAppClientId(agentParameters.ApplicationId);
+            this.parmTenantId(agentParameters.TenantId);
+            this.parmEnvironmentId(agentParameters.DataverseEnvironment);
+            this.parmAgentIdentifier(agentParameters.DataverseSchemaName);
 
             this.parmUserId(sysUserInfo.Id);
             this.parmUserNamen(sysUserInfo.Id);
+
+            if (buildControl.parmContextScopeType() == COTXCopilotAgentContextScopeType::Local)
+            {
+                this.parmSendContext("true");
+
+                formContext = COTXCopilotHostFormContext::construct(this.formRun());
+                formContext.onFormContextChange += eventhandler(this.formContextChange);
+
+                this.formContextChange(formContext);
+            }
+            else if (COTXCopilotAgentParameters::trackGlobalContext() && buildControl.parmContextScopeType() == COTXCopilotAgentContextScopeType::Global)
+            {
+                COTXCopilotHostGlobalContext globalContext = COTXCopilotHostGlobalContext::getInstance();
+                this.parmSendContext("true");
+
+                globalContext.onFormContextChange += eventhandler(this.formContextChange);
+                globalContext.forceFireOnChangeEvent();
+                
+                
+            }
         }
     }
 
@@ -484,6 +504,21 @@ public final class COTXCopilotHostControl extends FormTemplateControl
     /// </summary>
     delegate void onAgentResponse(COTXCopilotHostControl _sender, str _responseText)
     {
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>formContextChange</Name>
+				<Source><![CDATA[
+    private void formContextChange(COTXCopilotHostFormContext _formContext)
+    {
+        this.parmLegalEntity(_formContext.dataAreaId);
+        this.parmCurrentFormName(_formContext.formCaption);
+        this.parmCurrentMenuItem(_formContext.curMenuItemName);
+        this.parmTableName(_formContext.tableName);
+        this.parmNaturalKey(_formContext.naturalKey);
+        this.parmNaturalValue(_formContext.naturalValue);
     }
 
 ]]></Source>

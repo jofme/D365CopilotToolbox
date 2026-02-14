@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxClass xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>COTXCopilotHostFormContext</Name>
+	<SourceCode>
+		<Declaration><![CDATA[
+public final class COTXCopilotHostFormContext
+{
+    FormRun         formRun;
+    FormDataSource  rootFormDataSource;
+    Common          rootFormRecord;
+
+    public FormName         formCaption;
+    public DataAreaId       dataAreaId;
+    public FormName         curFormName;
+    public MenuItemName     curMenuItemName;
+    public str              formMode;
+    public TableName        tableName;
+    public FieldId          naturalKeyId;
+    public FieldLabel       naturalKey;
+    public FieldValue       naturalValue;
+
+}
+]]></Declaration>
+		<Methods>
+			<Method>
+				<Name>new</Name>
+				<Source><![CDATA[
+    protected void new(FormRun _formRun)
+    {
+        //TODO: Initialize this from cache
+
+        formRun     = _formRun;
+        curFormName = _formRun.name();
+        formCaption = formRun.design().caption();
+        dataAreaId  = curExt();
+        
+        if (formRun.args()
+            && formRun.args().menuItemName())
+        {
+            MenuFunction callerMenuFunction = new MenuFunction(formRun.args().menuItemName(), formRun.args().menuItemType());
+
+            if (callerMenuFunction
+                && callerMenuFunction.label())
+            {
+                curMenuItemName = SysLabel::labelId2String(callerMenuFunction.label());
+            }
+        }
+
+
+        this.subscribeToRootDataSource(_formRun);
+
+        if (rootFormDataSource)
+        {
+            SysDictTable sysDictTable = SysDictTable::newTableId(rootFormDataSource.table());
+
+            tableName = sysDictTable.labelDefined() ? sysDictTable.label() : sysDictTable.name();
+            
+            if (SysDictTable.titleField1())
+            {
+                naturalKeyId = sysDictTable.titleField1();
+                SysDictField sysDictField = new SysDictField(sysDictTable.id(), naturalKeyId);
+
+                naturalKey = sysDictField.labelDefined() ? sysDictField.label() : sysDictField.name();
+                this.setKeyValue();
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>construct</Name>
+				<Source><![CDATA[
+    public static COTXCopilotHostFormContext construct(FormRun _formRun)
+    {
+        COTXCopilotHostFormContext formContext = new COTXCopilotHostFormContext(_formRun);
+
+        return formContext;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>subscribeToRootDataSource</Name>
+				<Source><![CDATA[
+    private void subscribeToRootDataSource(FormRun _formRun)
+    {
+        for (int i = 1; i <= _formRun.dataSourceCount(); i++)
+        {
+            rootFormDataSource  = _formRun.dataSource(i);
+            rootFormRecord      = rootFormDataSource.cursor();
+
+            if ((_formRun.design().titleDatasource() && rootFormDataSource.id() == _formRun.design().titleDatasource()) ||
+                (!_formRun.design().titleDatasource() && rootFormDataSource.isRoot()))
+            {
+                rootFormDataSource.OnActivated += eventhandler(this.rootDatasourceActive);
+
+                break;
+            }
+        }
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>rootDatasourceActive</Name>
+				<Source><![CDATA[
+    private void rootDatasourceActive(FormDataSource _ds, FormDataSourceEventArgs e)
+    {
+        rootFormRecord = _ds.cursor();
+        this.setKeyValue();
+        this.onFormContextChange(this);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>setKeyValue</Name>
+				<Source><![CDATA[
+    private void setKeyValue()
+    {
+        naturalValue = any2Str(rootFormRecord.(naturalKeyId));
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>onFormContextChange</Name>
+				<Source><![CDATA[
+    delegate void onFormContextChange(COTXCopilotHostFormContext _sender)
+    {
+    }
+
+]]></Source>
+			</Method>
+		</Methods>
+	</SourceCode>
+</AxClass>

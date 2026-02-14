@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxEnumExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>COTXCopilotAgentApplicationArea.CopilotToolboxExamples</Name>
+	<EnumValues>
+		<AxEnumValue>
+			<Name>CTXESalesTable</Name>
+			<Label>Sales Table</Label>
+		</AxEnumValue>
+	</EnumValues>
+	<PropertyModifications />
+	<ValueModifications />
+</AxEnumExtension>

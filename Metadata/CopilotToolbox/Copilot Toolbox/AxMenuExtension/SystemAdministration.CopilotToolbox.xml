@@ -12,8 +12,8 @@
 				<Elements>
 					<AxMenuElement xmlns=""
 						i:type="AxMenuElementMenuItem">
-						<Name>COTXCopilotHostFormContextParameters</Name>
-						<MenuItemName>COTXCopilotHostFormContextParameters</MenuItemName>
+						<Name>COTXCopilotAgentParameters</Name>
+						<MenuItemName>COTXCopilotAgentParameters</MenuItemName>
 					</AxMenuElement>
 				</Elements>
 			</MenuElement>
