@@ -32,18 +32,6 @@ The primary solution provides a ready-to-use, performant and light-weight extens
 - **Application Area Routing** — Configure separate agents per business area (Sales, Inventory, Finance, etc.)
 - **Extensible Architecture** — Add new agents and application areas without modifying core code
 
-
-### Integration Features
-
-| Feature | Description |
-|---------|-------------|
-| **Side Panel Agent** | Global Copilot pane available from Settings menu across all forms |
-| **Embedded Agent** | Drop the control onto any form tab with local context scope |
-| **Global Context Tracking** | Side panel automatically tracks form navigation and sends context |
-| **Local Context Tracking** | Embedded controls subscribe to their form's data source changes |
-| **Role-Based Security** | Admin and User roles with dedicated duties and privileges |
-| **Tool Call Visualization** | See which tools agents invoke and their reasoning |
-
 ## Current Solutions
 
 This repository currently includes:
