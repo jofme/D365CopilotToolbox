@@ -2,7 +2,7 @@
 <AxModelInfo xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
 	<AppliedUpdates xmlns:d2p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
 	<Customization>Allow</Customization>
-	<Description></Description>
+	<Description>A community-driven framework for enabling multi-agent workflows in Dynamics 365 Finance &amp; Operations. This repository provides solutions, examples, and integrations that bring AI agents into D365 F&amp;O to enhance business processes and user productivity.</Description>
 	<DisplayName>Copilot Toolbox</DisplayName>
 	<Id>896000944</Id>
 	<InternalsVisibleTo xmlns:d2p1="http://schemas.microsoft.com/2003/10/Serialization/Arrays" />
@@ -19,8 +19,8 @@
 	<Name>Copilot Toolbox</Name>
 	<Publisher>ERPilots</Publisher>
 	<SolutionId>00000000-0000-0000-0000-000000000000</SolutionId>
-	<VersionBuild>0</VersionBuild>
+	<VersionBuild>3</VersionBuild>
 	<VersionMajor>1</VersionMajor>
-	<VersionMinor>0</VersionMinor>
+	<VersionMinor>26</VersionMinor>
 	<VersionRevision>0</VersionRevision>
 </AxModelInfo>
