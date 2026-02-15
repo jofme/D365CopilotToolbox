@@ -13,6 +13,8 @@ A community-driven framework for enabling **multi-agent workflows** in **Dynamic
 > Initial idea by Lone Gru (lone.gru@arineo.com)
 
 ---
+![Intro Recording](docs/Media/IntroRecording.gif)
+
 
 ## Overview
 
@@ -85,23 +87,7 @@ See the [Getting Started Guide](docs/getting-started.md) for prerequisites, inst
 D365CopilotToolbox/
 ├── Metadata/
 │   ├── CopilotToolbox/              # Main model (module: CopilotToolbox)
-│   │   └── Copilot Toolbox/
-│   │       ├── AxClass/             # X++ classes (host control, context tracking)
-│   │       ├── AxTable/             # Agent parameters & application area tables
-│   │       ├── AxForm/              # Parameters form & side panel
-│   │       ├── AxEdt/               # Extended data types
-│   │       ├── AxEnum/              # Application area & context scope enums
-│   │       ├── AxResource/          # HTML, JS, CSS for the browser control
-│   │       ├── AxSecurityRole/      # Admin & User roles
-│   │       ├── AxSecurityDuty/      # Admin & User duties
-│   │       ├── AxSecurityPrivilege/ # Parameter & side panel privileges
-│   │       ├── AxMenuExtension/     # Settings menu & System Administration integrations
-│   │       ├── AxMenuItemDisplay/   # Menu items for forms
-│   │       └── AxLabelFile/         # en-US localizable labels
 │   └── CopilotToolboxExamples/      # Example model (module: CopilotToolboxExamples)
-│       └── Copilot Toolbox Examples/
-│           ├── AxEnumExtension/     # Example: SalesTable application area
-│           └── AxFormExtension/     # Example: Copilot on SalesTable form
 ├── Project/
 │   ├── CopilotAgentHost/            # VS project for main model
 │   └── CopilotHostExamples/         # VS project for examples model

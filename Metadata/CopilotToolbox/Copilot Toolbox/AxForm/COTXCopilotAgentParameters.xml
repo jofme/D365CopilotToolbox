@@ -102,7 +102,7 @@ public class COTXCopilotAgentParameters extends FormRun
 		</AxFormDataSource>
 	</DataSources>
 	<Design>
-		<Caption xmlns="">@CopilotToolbox:COTXCopilotHostFormContextParameters</Caption>
+		<Caption xmlns="">Agent Parameters</Caption>
 		<Pattern xmlns="">SimpleListDetails-Grid</Pattern>
 		<PatternVersion xmlns="">1.4</PatternVersion>
 		<Style xmlns="">SimpleListDetails</Style>

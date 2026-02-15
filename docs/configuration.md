@@ -86,6 +86,7 @@ When `Send Global FSCM Context` is enabled, every user message includes a `conte
 1. **Power Automate actions** that read the conversation context
 2. **Custom topics** that extract context variables
 3. **Plugin actions** that receive the full turn context
+4. **Variable reference** in your agent instructions
 
 The context structure is:
 
