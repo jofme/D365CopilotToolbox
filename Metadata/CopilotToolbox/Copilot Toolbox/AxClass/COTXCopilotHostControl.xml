@@ -37,6 +37,7 @@ public final class COTXCopilotHostControl extends FormTemplateControl
     FormProperty pendingMessage;
     FormProperty agentResponse;
     FormProperty showToolCalls;
+    FormProperty showThoughts;
 
     COTXCopilotHostControlBuild buildControl;
     COTXCopilotHostFormContext  formContext;
@@ -84,8 +85,8 @@ public final class COTXCopilotHostControl extends FormTemplateControl
 
         agentResponse = this.addProperty(methodstr(COTXCopilotHostControl, parmAgentResponse), Types::String);
 
-        // Tool call visibility (default: show)
         showToolCalls   = this.addProperty(methodstr(COTXCopilotHostControl, parmShowToolCalls), Types::String);
+        showThoughts   = this.addProperty(methodstr(COTXCopilotHostControl, parmShowThoughts), Types::String);
 
     }
 
@@ -119,6 +120,7 @@ public final class COTXCopilotHostControl extends FormTemplateControl
         COTXCopilotAgentParameters agentParameters = COTXCopilotAgentParameters::findForApplicationArea(_applicationArea);
 
         this.parmShowToolCalls(agentParameters.ShowToolUsage ? 'true' : '');
+        this.parmShowThoughts('true'); //TODO: Make parameter for this!
 
         if (agentParameters)
         {
@@ -145,8 +147,7 @@ public final class COTXCopilotHostControl extends FormTemplateControl
                 this.parmSendContext('true');
 
                 globalContext.onFormContextChange += eventhandler(this.formContextChange);
-                globalContext.forceFireOnChangeEvent();
-                
+                globalContext.forceFireOnChangeEvent();               
                 
             }
         }
@@ -549,6 +550,22 @@ public final class COTXCopilotHostControl extends FormTemplateControl
         {
             showToolCalls.setValueOrBinding(_value);
             return showToolCalls.parmValue();
+        }
+        return _value;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmShowThoughts</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "ShowThoughts")]
+    public str parmShowThoughts(str _value = showThoughts.parmValue())
+    {
+        if (!prmIsDefault(_value))
+        {
+            showThoughts.setValueOrBinding(_value);
+            return showThoughts.parmValue();
         }
         return _value;
     }
