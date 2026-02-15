@@ -28,6 +28,9 @@ internal class COTXCopilotAgentParameters extends common
     /// <summary>
     /// Finds a parameters record by name.
     /// </summary>
+    /// <param name="_name">The agent parameter name to search for.</param>
+    /// <param name="_forUpdate">If true, the record is selected for update.</param>
+    /// <returns>The <c>COTXCopilotAgentParameters</c> record if found; otherwise, an empty record.</returns>
     public static COTXCopilotAgentParameters find(Name _name, boolean _forUpdate = false)
     {
         COTXCopilotAgentParameters record;
@@ -48,6 +51,8 @@ internal class COTXCopilotAgentParameters extends common
     /// <summary>
     /// Checks whether a parameters record exists for the specified name.
     /// </summary>
+    /// <param name="_name">The agent parameter name to check.</param>
+    /// <returns>true if a record with the specified name exists; otherwise, false.</returns>
     public static boolean exist(Name _name)
     {
         return _name && (select firstonly RecId from COTXCopilotAgentParameters
@@ -61,8 +66,11 @@ internal class COTXCopilotAgentParameters extends common
 				<Source><![CDATA[
     /// <summary>
     /// Finds the parameter record associated with the specified application area.
-    /// If no mapping exists for the requested area, the `Fallback` application area is used.
+    /// If no mapping exists for the requested area, the <c>Fallback</c> application area is used.
     /// </summary>
+    /// <param name="_applicationArea">The application area to find parameters for.</param>
+    /// <param name="_forUpdate">If true, the record is selected for update.</param>
+    /// <returns>The <c>COTXCopilotAgentParameters</c> record for the given application area, or the fallback record.</returns>
     public static COTXCopilotAgentParameters findForApplicationArea(COTXCopilotAgentApplicationArea _applicationArea, boolean _forUpdate = false)
     {
         COTXCopilotAgentApplicationAreas mapping;
@@ -101,6 +109,10 @@ internal class COTXCopilotAgentParameters extends common
 			<Method>
 				<Name>trackGlobalContext</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Determines whether any agent parameter is configured to track the global FSCM context.
+    /// </summary>
+    /// <returns>true if at least one agent parameter has global context tracking enabled; otherwise, false.</returns>
     public static boolean trackGlobalContext()
     {
         return (select firstonly RecId from COTXCopilotAgentParameters
@@ -111,7 +123,8 @@ internal class COTXCopilotAgentParameters extends common
 			</Method>
 		</Methods>
 	</SourceCode>
-	<Label>Agent Parameters</Label>
+	<DeveloperDocumentation>@CopilotToolbox:COTXCopilotAgentParametersDoc</DeveloperDocumentation>
+	<Label>@CopilotToolbox:COTXAgentParameters</Label>
 	<SubscriberAccessLevel>
 		<Read>Allow</Read>
 	</SubscriberAccessLevel>
@@ -131,7 +144,14 @@ internal class COTXCopilotAgentParameters extends common
 	<FieldGroups>
 		<AxTableFieldGroup>
 			<Name>AutoReport</Name>
-			<Fields />
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>Name</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>Description</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
 		</AxTableFieldGroup>
 		<AxTableFieldGroup>
 			<Name>AutoLookup</Name>
@@ -188,7 +208,7 @@ internal class COTXCopilotAgentParameters extends common
 		</AxTableFieldGroup>
 		<AxTableFieldGroup>
 			<Name>Dataverse</Name>
-			<Label>Dataverse</Label>
+			<Label>@CopilotToolbox:COTXDataverse</Label>
 			<Fields>
 				<AxTableFieldGroupField>
 					<DataField>DataverseSchemaName</DataField>
@@ -254,6 +274,7 @@ internal class COTXCopilotAgentParameters extends common
 			<Name>ShowToolUsage</Name>
 			<ExtendedDataType>COTXCopilotHostShowToolUsage</ExtendedDataType>
 			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<EnumType>NoYes</EnumType>
 		</AxTableField>
 	</Fields>
 	<FullTextIndexes />

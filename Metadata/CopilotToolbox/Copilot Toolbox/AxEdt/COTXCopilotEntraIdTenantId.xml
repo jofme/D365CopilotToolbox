@@ -2,7 +2,7 @@
 <AxEdt xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns=""
 	i:type="AxEdtString">
 	<Name>COTXCopilotEntraIdTenantId</Name>
-	<Label>Entra ID Tenant</Label>
+	<Label>@CopilotToolbox:COTXEntraIdTenant</Label>
 	<ArrayElements />
 	<Relations />
 	<TableReferences />

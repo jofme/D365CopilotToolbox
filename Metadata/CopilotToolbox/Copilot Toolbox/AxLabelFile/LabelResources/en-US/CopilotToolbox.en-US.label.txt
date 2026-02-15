@@ -15,3 +15,29 @@ COTXCopilotUserDuty=Copilot user
 COTXCopilotAdminDuty=Copilot administrator
 COTXCopilotUserRole=Copilot user role
 COTXCopilotAdminRole=Copilot administrator role
+COTXDataverseEnvironment=Dataverse Environment
+ ;Dataverse environment URL or identifier
+COTXAgentSchemaName=Agent Schema Name
+ ;Copilot Studio agent schema name in Dataverse
+COTXEntraIdAppReg=Entra ID App Registration
+ ;Entra ID application registration identifier
+COTXEntraIdTenant=Entra ID Tenant
+ ;Entra ID tenant identifier
+COTXSendGlobalContext=Send Global FSCM Context
+ ;Toggle to send global D365 context to Copilot agent
+COTXShowToolUsage=Show tool usage
+ ;Toggle to show tool call details in chat
+COTXAvailableIn=Available In
+ ;Application area availability configuration
+COTXCopilotStudio=Copilot Studio
+ ;Copilot Studio configuration section
+COTXCopilotAgentAvailability=Copilot Agent Availability
+ ;Agent application area mappings
+COTXAgentParameters=Agent Parameters
+ ;Copilot agent configuration parameters
+COTXDataverse=Dataverse
+ ;Dataverse configuration section
+COTXCopilotAgentAvailabilityDoc=Contains the mapping of application areas to Copilot agent parameter configurations.
+ ;Developer documentation for COTXCopilotAgentApplicationAreas table
+COTXCopilotAgentParametersDoc=Stores Copilot agent configuration parameters including connection details, authentication, and context settings.
+ ;Developer documentation for COTXCopilotAgentParameters table

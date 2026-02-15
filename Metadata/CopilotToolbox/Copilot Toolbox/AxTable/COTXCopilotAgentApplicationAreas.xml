@@ -28,6 +28,9 @@ internal class COTXCopilotAgentApplicationAreas extends common
     /// <summary>
     /// Finds the application-area mapping for the specified application area.
     /// </summary>
+    /// <param name="_applicationArea">The application area to search for.</param>
+    /// <param name="_forUpdate">If true, the record is selected for update.</param>
+    /// <returns>The <c>COTXCopilotAgentApplicationAreas</c> record if found; otherwise, an empty record.</returns>
     public static COTXCopilotAgentApplicationAreas find(COTXCopilotAgentApplicationArea _applicationArea, boolean _forUpdate = false)
     {
         COTXCopilotAgentApplicationAreas record;
@@ -48,6 +51,8 @@ internal class COTXCopilotAgentApplicationAreas extends common
     /// <summary>
     /// Returns true when a mapping exists for the specified application area.
     /// </summary>
+    /// <param name="_applicationArea">The application area to check.</param>
+    /// <returns>true if a mapping exists for the specified application area; otherwise, false.</returns>
     public static boolean exist(COTXCopilotAgentApplicationArea _applicationArea)
     {
         return _applicationArea && (select firstonly RecId from COTXCopilotAgentApplicationAreas
@@ -58,7 +63,8 @@ internal class COTXCopilotAgentApplicationAreas extends common
 			</Method>
 		</Methods>
 	</SourceCode>
-	<Label>Copilot Agent Availability</Label>
+	<DeveloperDocumentation>@CopilotToolbox:COTXCopilotAgentAvailabilityDoc</DeveloperDocumentation>
+	<Label>@CopilotToolbox:COTXCopilotAgentAvailability</Label>
 	<SubscriberAccessLevel>
 		<Read>Allow</Read>
 	</SubscriberAccessLevel>
@@ -67,11 +73,16 @@ internal class COTXCopilotAgentApplicationAreas extends common
 	<AllowRowVersionChangeTracking>Yes</AllowRowVersionChangeTracking>
 	<CacheLookup>FoundAndEmpty</CacheLookup>
 	<ClusteredIndex>ApplicationAreaIdx</ClusteredIndex>
+	<ReplacementKey>ApplicationAreaIdx</ReplacementKey>
 	<DeleteActions />
 	<FieldGroups>
 		<AxTableFieldGroup>
 			<Name>AutoReport</Name>
-			<Fields />
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>ApplicationArea</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
 		</AxTableFieldGroup>
 		<AxTableFieldGroup>
 			<Name>AutoLookup</Name>
@@ -80,7 +91,11 @@ internal class COTXCopilotAgentApplicationAreas extends common
 		<AxTableFieldGroup>
 			<Name>AutoIdentification</Name>
 			<AutoPopulate>Yes</AutoPopulate>
-			<Fields />
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>ApplicationArea</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
 		</AxTableFieldGroup>
 		<AxTableFieldGroup>
 			<Name>AutoSummary</Name>
@@ -91,8 +106,17 @@ internal class COTXCopilotAgentApplicationAreas extends common
 			<Fields />
 		</AxTableFieldGroup>
 		<AxTableFieldGroup>
+			<Name>AgentParameterGroup</Name>
+			<Label>@CopilotToolbox:COTXAgentParameters</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>AgentParameter</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
 			<Name>AvailableId</Name>
-			<Label>Available In</Label>
+			<Label>@CopilotToolbox:COTXAvailableIn</Label>
 			<Fields>
 				<AxTableFieldGroupField>
 					<DataField>ApplicationArea</DataField>
@@ -117,6 +141,7 @@ internal class COTXCopilotAgentApplicationAreas extends common
 	<Indexes>
 		<AxTableIndex>
 			<Name>ApplicationAreaIdx</Name>
+			<AlternateKey>Yes</AlternateKey>
 			<Fields>
 				<AxTableIndexField>
 					<DataField>ApplicationArea</DataField>

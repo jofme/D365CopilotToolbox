@@ -3,6 +3,11 @@
 	<Name>COTXCopilotHostGlobalContext</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Singleton that tracks the global form navigation context across D365 FSCM.
+/// Fires change events when the user navigates to a new root-navigable form, allowing the
+/// Copilot side-panel to receive up-to-date ERP context.
+/// </summary>
 internal final class COTXCopilotHostGlobalContext
 {
     COTXCopilotHostFormContext formContext;
@@ -41,6 +46,10 @@ internal final class COTXCopilotHostGlobalContext
 			<Method>
 				<Name>handleFormActivation</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Processes a form activation event and updates the global context if the form is root-navigable.
+    /// </summary>
+    /// <param name="_formRun">The form run instance that was activated.</param>
     public void handleFormActivation(FormRun _formRun)
     {
         if (!shouldTrackGlobalContext)
@@ -49,7 +58,7 @@ internal final class COTXCopilotHostGlobalContext
         }
 
         if (!_formRun.args()
-            || _formRun.args().menuItemName() == "")
+            || !_formRun.args().menuItemName())
         {
             return;
         }
@@ -72,7 +81,7 @@ internal final class COTXCopilotHostGlobalContext
 
         formContext = COTXCopilotHostFormContext::construct(_formRun);
 
-        if (formContext.tableName != "")
+        if (formContext.tableName)
         {
             formContext.onFormContextChange += eventhandler(this.formContextActive);
             this.formContextActive(formContext);
@@ -84,6 +93,10 @@ internal final class COTXCopilotHostGlobalContext
 			<Method>
 				<Name>forceFireOnChangeEvent</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Forces a re-fire of the form context change event for the current context.
+    /// Used when a new subscriber needs the current state immediately.
+    /// </summary>
     public void forceFireOnChangeEvent()
     {
         if (formContext)
@@ -118,6 +131,10 @@ internal final class COTXCopilotHostGlobalContext
 			<Method>
 				<Name>onFormContextChange</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Delegate raised when the global form context changes due to form navigation.
+    /// </summary>
+    /// <param name="_sender">The form context instance representing the new active context.</param>
     delegate void onFormContextChange(COTXCopilotHostFormContext _sender)
     {
     }

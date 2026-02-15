@@ -3,6 +3,10 @@
 	<Name>COTXCopilotHostControlBuild</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Build-time configuration class for the <c>COTXCopilotHostControl</c> extensible control.
+/// Exposes design-time properties for configuring the application area and context scope.
+/// </summary>
 [FormDesignControlAttribute("COTX Copilot Agent Host Control")]
 public final class COTXCopilotHostControlBuild extends FormBuildControl
 {

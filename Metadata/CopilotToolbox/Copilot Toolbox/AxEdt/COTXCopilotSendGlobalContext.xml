@@ -2,7 +2,7 @@
 <AxEdt xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns=""
 	i:type="AxEdtEnum">
 	<Name>COTXCopilotSendGlobalContext</Name>
-	<Label>Send Global FSCM Context</Label>
+	<Label>@CopilotToolbox:COTXSendGlobalContext</Label>
 	<ArrayElements />
 	<Relations />
 	<TableReferences />

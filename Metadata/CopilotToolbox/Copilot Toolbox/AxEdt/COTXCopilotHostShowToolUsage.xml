@@ -3,7 +3,7 @@
 	i:type="AxEdtEnum">
 	<Name>COTXCopilotHostShowToolUsage</Name>
 	<Extends>noyesid</Extends>
-	<Label>Show tool usage</Label>
+	<Label>@CopilotToolbox:COTXShowToolUsage</Label>
 	<ArrayElements />
 	<Relations />
 	<TableReferences />

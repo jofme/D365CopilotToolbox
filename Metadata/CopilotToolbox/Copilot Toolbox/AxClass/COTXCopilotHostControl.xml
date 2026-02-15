@@ -47,7 +47,7 @@ public final class COTXCopilotHostControl extends FormTemplateControl
 			<Method>
 				<Name>new</Name>
 				<Source><![CDATA[
-    public void new(FormBuildControl _build, FormRun _formRun)
+    protected void new(FormBuildControl _build, FormRun _formRun)
     {
         super(_build, _formRun);
 
@@ -112,6 +112,7 @@ public final class COTXCopilotHostControl extends FormTemplateControl
     /// Initializes the control by reading config values and passing them to the browser.
     /// No server-side token acquisition — that's handled by MSAL.js in the browser.
     /// </summary>
+    /// <param name="_applicationArea">The application area used to resolve agent parameters.</param>
     public void initializeControl(COTXCopilotAgentApplicationArea _applicationArea)
     {
         SysUserInfo sysUserInfo = SysUserInfo::find();
@@ -471,6 +472,8 @@ public final class COTXCopilotHostControl extends FormTemplateControl
     /// <summary>
     /// Gets or sets the latest agent response text, written from JS when the agent replies.
     /// </summary>
+    /// <param name="_value">The agent response text to set.</param>
+    /// <returns>The current agent response text.</returns>
     [FormPropertyAttribute(FormPropertyKind::Value, "AgentResponse")]
     public str parmAgentResponse(str _value = agentResponse.parmValue())
     {
@@ -508,6 +511,8 @@ public final class COTXCopilotHostControl extends FormTemplateControl
     /// Delegate event raised when the Copilot agent sends a response.
     /// Subscribe from form code to react to agent replies.
     /// </summary>
+    /// <param name="_sender">The control instance raising the event.</param>
+    /// <param name="_responseText">The agent's response text.</param>
     delegate void onAgentResponse(COTXCopilotHostControl _sender, str _responseText)
     {
     }
@@ -535,6 +540,8 @@ public final class COTXCopilotHostControl extends FormTemplateControl
     /// <summary>
     /// Gets or sets whether tool calls should be displayed in the chat.
     /// </summary>
+    /// <param name="_value">The value indicating tool call visibility.</param>
+    /// <returns>The current tool call visibility setting.</returns>
     [FormPropertyAttribute(FormPropertyKind::Value, "ShowToolCalls")]
     public str parmShowToolCalls(str _value = showToolCalls.parmValue())
     {

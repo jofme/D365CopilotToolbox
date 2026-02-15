@@ -144,9 +144,7 @@
                         if (activity && activity.type === 'typing') {
                             return; // Exit early without processing
                         }
-
-                    }
-                        
+                    }                        
 
                     if (action.type === 'DIRECT_LINE/POST_ACTIVITY'
                         && action.payload.activity.type === 'message'

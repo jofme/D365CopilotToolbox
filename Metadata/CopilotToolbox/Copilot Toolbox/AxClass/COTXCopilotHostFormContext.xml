@@ -3,6 +3,10 @@
 	<Name>COTXCopilotHostFormContext</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
+/// <summary>
+/// Tracks the active form context (data source, record, navigation fields) and raises
+/// change events consumed by the Copilot host control to pass ERP context to the agent.
+/// </summary>
 public final class COTXCopilotHostFormContext
 {
     FormRun         formRun;
@@ -127,6 +131,10 @@ public final class COTXCopilotHostFormContext
 			<Method>
 				<Name>onFormContextChange</Name>
 				<Source><![CDATA[
+    /// <summary>
+    /// Delegate raised when the form context changes, e.g. when the active record changes.
+    /// </summary>
+    /// <param name="_sender">The form context instance that changed.</param>
     delegate void onFormContextChange(COTXCopilotHostFormContext _sender)
     {
     }

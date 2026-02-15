@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<IgnoreDiagnostics>
+	<Name>CopilotToolbox_BPSuppressions</Name>
+	<Items>
+		<Diagnostic>
+			<DiagnosticType>BestPractices</DiagnosticType>
+			<Severity>Warning</Severity>
+			<Path>dynamics://Form/COTXCopilotHostSidePanel/FormDesign/FormDesign</Path>
+			<Moniker>BPWarningFormDesignOrControlsWithCustomPattern</Moniker>
+			<Justification>Custom pattern is required for aside pane forms.</Justification>
+		</Diagnostic>
+		<Diagnostic>
+			<DiagnosticType>CodeAnalysis</DiagnosticType>
+			<Severity>Warning</Severity>
+			<Path>dynamics://Form/COTXCopilotHostSidePanel</Path>
+			<Moniker>BPCheckInvalidInitFormMethodWarning</Moniker>
+			<Message>Form element statements should not be used before super() in init method of form COTXCopilotHostSidePanel</Message>
+			<Justification>setDisplayTarget and disableSavedViewsOnForm must be called before super() for aside pane forms per Microsoft documentation.</Justification>
+		</Diagnostic>
+		<Diagnostic>
+			<DiagnosticType>BestPractices</DiagnosticType>
+			<Severity>Warning</Severity>
+			<Path>dynamics://Class/COTXCopilotHostFormContext/Method/rootDatasourceActive</Path>
+			<Moniker>BPParameterNotUsed</Moniker>
+			<Justification>Parameter 'e' (FormDataSourceEventArgs) is required by the OnActivated delegate signature.</Justification>
+		</Diagnostic>
+	</Items>
+</IgnoreDiagnostics>

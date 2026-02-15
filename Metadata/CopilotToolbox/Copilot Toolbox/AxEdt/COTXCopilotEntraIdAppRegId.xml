@@ -2,7 +2,7 @@
 <AxEdt xmlns:i="http://www.w3.org/2001/XMLSchema-instance" xmlns=""
 	i:type="AxEdtString">
 	<Name>COTXCopilotEntraIdAppRegId</Name>
-	<Label>Entra ID App Registration</Label>
+	<Label>@CopilotToolbox:COTXEntraIdAppReg</Label>
 	<ArrayElements />
 	<Relations />
 	<TableReferences />

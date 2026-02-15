@@ -332,7 +332,7 @@ public class COTXCopilotAgentParameters extends FormRun
 							</AxFormControl>
 						</Controls>
 						<ColumnsMode>Fill</ColumnsMode>
-						<Caption>Copilot Studio</Caption>
+					<Caption>@CopilotToolbox:COTXCopilotStudio</Caption>
 					</AxFormControl>
 					<AxFormControl xmlns=""
 						i:type="AxFormTabPageControl">
@@ -412,7 +412,7 @@ public class COTXCopilotAgentParameters extends FormRun
 								<DataSource>COTXCopilotAgentApplicationAreas</DataSource>
 							</AxFormControl>
 						</Controls>
-						<Caption>Available In</Caption>
+						<Caption>@CopilotToolbox:COTXAvailableIn</Caption>
 					</AxFormControl>
 				</Controls>
 				<Style>FastTabs</Style>
