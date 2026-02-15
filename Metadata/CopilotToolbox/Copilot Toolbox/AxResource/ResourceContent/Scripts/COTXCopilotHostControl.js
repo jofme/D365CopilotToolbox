@@ -1,4 +1,4 @@
-(function () {
+ï»¿(function () {
     'use strict';
 
     var COPILOT_SDK_URL = 'https://unpkg.com/@microsoft/agents-copilotstudio-client@1.2.3/dist/src/browser.mjs';
@@ -57,7 +57,9 @@
         rootHeight: '100%',
         rootWidth: '100%',
         hideScrollToEndButton: false,
-        markdownRenderHTML: true
+        markdownRenderHTML: true,
+        // Enable emoji support
+        emojiSet: true
     };
 
     var MAX_RENDER_ATTEMPTS = 60;
@@ -65,7 +67,7 @@
     var waitingForBotReply = false;
 
     // -----------------------------------------------------------------------
-    // Token acquisition via MSAL.js (delegated permissions — no secret needed)
+    // Token acquisition via MSAL.js (delegated permissions â€” no secret needed)
     // -----------------------------------------------------------------------
 
     /**
@@ -107,7 +109,7 @@
                 }).then(function (response) {
                     return response.accessToken;
                 }).catch(function (silentError) {
-                    // Silent failed — fall back to popup
+                    // Silent failed â€” fall back to popup
                     console.warn('COTXCopilotHostControl: Silent token failed, trying popup', silentError);
                     return msalInstance.acquireTokenPopup(loginRequest).then(function (response) {
                         return response.accessToken;
@@ -115,7 +117,7 @@
                 });
             }
 
-            // No cached accounts — use popup
+            // No cached accounts â€” use popup
             return msalInstance.acquireTokenPopup(loginRequest).then(function (response) {
                 return response.accessToken;
             });
@@ -123,7 +125,7 @@
     }
 
     // -----------------------------------------------------------------------
-    // WebChat store middleware — injects ERP context into outgoing messages
+    // WebChat store middleware â€” injects ERP context into outgoing messages
     // -----------------------------------------------------------------------
 
     function createStore(data) {
@@ -134,6 +136,18 @@
         return window.WebChat.createStore({}, function () {
             return function (next) {
                 return function (action) {
+                    // AGGRESSIVE FILTER: Drop typing indicators immediately before any processing
+                    if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
+                        var activity = action.payload && action.payload.activity;
+
+                        // Drop typing indicators completely - don't even call next()
+                        if (activity && activity.type === 'typing') {
+                            return; // Exit early without processing
+                        }
+
+                    }
+                        
+
                     if (action.type === 'DIRECT_LINE/POST_ACTIVITY'
                         && action.payload.activity.type === 'message'
                         && shouldSendContext()) {
@@ -165,17 +179,182 @@
                         });
                     }
 
-                    // Capture incoming agent responses — only when X++ initiated the message
+                    // Capture incoming agent responses â€” only when X++ initiated the message
                     if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
                         var activity = action.payload.activity;
 
                         if (activity.type === 'message'
                             && activity.from.role === 'bot'
                             && activity.text
-                            && waitingForBotReply) {
+                            && waitingForBotReply
+                            && !activity.channelData?.isToolThought) { // Don't capture tool thoughts as final responses
 
                             waitingForBotReply = false;
                             $dyn.callFunction(data.RaiseAgentResponse, null, [activity.text]);
+                        }
+                    }
+
+                    // Handle Dynamic Plan events (tool calls from Copilot Studio)
+                    if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
+                        var activity = action.payload.activity;
+
+                        if (activity && activity.type === 'event') {
+                            // Track tool calls by plan identifier for correlating with thoughts
+                            if (!window._copilotToolCalls) {
+                                window._copilotToolCalls = {};
+                            }
+
+                            if (activity.name === 'DynamicPlanReceived' && activity.value) {
+                                var planValue = activity.value;
+                                var planId = planValue.planIdentifier;
+
+                                // Store tool definitions for this plan
+                                window._copilotToolCalls[planId] = {
+                                    tools: (planValue.toolDefinitions || []).map(function (tool, index) {
+                                        return {
+                                            id: index.toString(),
+                                            llmIdentifierPrefix: tool.llmIdentifierPrefix || tool.displayName,
+                                            description: tool.description || '',
+                                            identifier: tool.identifier,
+                                            thought: 'Waiting for agent reasoning...'
+                                        };
+                                    }),
+                                    cardSent: false
+                                };
+
+                                console.log('COTXCopilotHostControl: DynamicPlanReceived', planId);
+                            }
+
+                            if (activity.name === 'DynamicPlanStepTriggered' && activity.value) {
+                                var stepValue = activity.value;
+                                var planId = stepValue.planIdentifier;
+                                var thought = stepValue.thought || '';
+
+                                // Check if tool calls should be shown
+                                var showToolCalls = !!$dyn.peek(data.ShowToolCalls);
+
+                                // Update the matching tool with its thought
+                                if (window._copilotToolCalls[planId]) {
+                                    var planData = window._copilotToolCalls[planId];
+
+                                    // Find matching tool by taskDialogId
+                                    planData.tools.forEach(function (tool) {
+                                        if (stepValue.taskDialogId && stepValue.taskDialogId.indexOf(tool.identifier) !== -1) {
+                                            tool.thought = thought;
+                                        }
+                                    });
+
+                                    // Send the Adaptive Card if not already sent and tool calls are enabled
+                                    if (!planData.cardSent && planData.tools.length > 0 && showToolCalls) {
+                                        planData.cardSent = true;
+
+                                        var adaptiveCard = {
+                                            "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
+                                            "type": "AdaptiveCard",
+                                            "version": "1.6",
+                                            "body": [
+                                                {
+                                                    "type": "TextBlock",
+                                                    "text": "ðŸ”§ Tool Call",
+                                                    "weight": "Bolder",
+                                                    "size": "Small"
+                                                }
+                                            ]
+                                        };
+
+                                        // Build container for each tool
+                                        planData.tools.forEach(function (tool) {
+                                            adaptiveCard.body.push({
+                                                "type": "Container",
+                                                "spacing": "Small",
+                                                "separator": true,
+                                                "items": [
+                                                    {
+                                                        "type": "ColumnSet",
+                                                        "columns": [
+                                                            {
+                                                                "type": "Column",
+                                                                "width": "auto",
+                                                                "items": [
+                                                                    {
+                                                                        "type": "TextBlock",
+                                                                        "text": "âš¡",
+                                                                        "size": "Small"
+                                                                    }
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "Column",
+                                                                "width": "stretch",
+                                                                "items": [
+                                                                    {
+                                                                        "type": "TextBlock",
+                                                                        "text": tool.llmIdentifierPrefix,
+                                                                        "weight": "Bolder",
+                                                                        "wrap": true,
+                                                                        "size": "Small"
+                                                                    },
+                                                                    {
+                                                                        "type": "TextBlock",
+                                                                        "text": tool.description,
+                                                                        "isSubtle": true,
+                                                                        "spacing": "None",
+                                                                        "wrap": true,
+                                                                        "size": "Small"
+                                                                    }
+                                                                ]
+                                                            }
+                                                        ]
+                                                    },
+                                                    {
+                                                        "type": "ActionSet",
+                                                        "spacing": "Small",
+                                                        "actions": [
+                                                            {
+                                                                "type": "Action.ShowCard",
+                                                                "title": "ðŸ’­ Show Thoughts",
+                                                                "card": {
+                                                                    "type": "AdaptiveCard",
+                                                                    "body": [
+                                                                        {
+                                                                            "type": "TextBlock",
+                                                                            "text": tool.thought,
+                                                                            "wrap": true,
+                                                                            "size": "Small",
+                                                                            "isSubtle": true
+                                                                        }
+                                                                    ]
+                                                                }
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            });
+                                        });
+
+                                        // Inject the card as a bot message
+                                        var cardActivity = {
+                                            type: 'message',
+                                            from: { role: 'bot' },
+                                            attachments: [{
+                                                contentType: 'application/vnd.microsoft.card.adaptive',
+                                                content: adaptiveCard
+                                            }],
+                                            channelData: { isToolThought: true }
+                                        };
+
+                                        next({
+                                            type: 'DIRECT_LINE/INCOMING_ACTIVITY',
+                                            payload: { activity: cardActivity }
+                                        });
+                                    }
+                                }
+
+                                console.log('COTXCopilotHostControl: DynamicPlanStepTriggered', stepValue.thought);
+                            }
+
+                            // Don't pass original event activities to WebChat
+                            return;
                         }
                     }
 
@@ -199,7 +378,7 @@
             var client = new sdk.CopilotStudioClient(settings, token);
 
             return sdk.CopilotStudioWebChat.createConnection(client, {
-                typingIndicator: true
+                showTyping: false
             });
         });
     }
@@ -262,7 +441,7 @@
                             store: store
                         }, element);
 
-                        // Observe PendingMessage — when X++ sets it, send it through WebChat
+                        // Observe PendingMessage â€” when X++ sets it, send it through WebChat
                         $dyn.observe(data.PendingMessage, function (message) {
                             if (!message) {
                                 return;

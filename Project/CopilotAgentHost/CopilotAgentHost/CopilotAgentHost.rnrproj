@@ -93,6 +93,11 @@
       <Name>COTXCopilotHostContextId</Name>
       <Link>Extended Data Types\COTXCopilotHostContextId</Link>
     </Content>
+    <Content Include="AxEdt\COTXCopilotHostShowToolUsage">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotHostShowToolUsage</Name>
+      <Link>EDT Enums\COTXCopilotHostShowToolUsage</Link>
+    </Content>
     <Content Include="AxEdt\COTXCopilotSendGlobalContext">
       <SubType>Content</SubType>
       <Name>COTXCopilotSendGlobalContext</Name>

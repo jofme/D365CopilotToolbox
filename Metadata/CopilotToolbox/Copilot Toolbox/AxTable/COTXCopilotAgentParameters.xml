@@ -169,6 +169,9 @@ internal class COTXCopilotAgentParameters extends common
 				<AxTableFieldGroupField>
 					<DataField>SendGlobalContext</DataField>
 				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>ShowToolUsage</DataField>
+				</AxTableFieldGroupField>
 			</Fields>
 		</AxTableFieldGroup>
 		<AxTableFieldGroup>
@@ -245,6 +248,12 @@ internal class COTXCopilotAgentParameters extends common
 			<ExtendedDataType>COTXCopilotSendGlobalContext</ExtendedDataType>
 			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
 			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>ShowToolUsage</Name>
+			<ExtendedDataType>COTXCopilotHostShowToolUsage</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
 		</AxTableField>
 	</Fields>
 	<FullTextIndexes />

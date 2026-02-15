@@ -36,6 +36,7 @@ public final class COTXCopilotHostControl extends FormTemplateControl
     FormProperty sendContext;
     FormProperty pendingMessage;
     FormProperty agentResponse;
+    FormProperty showToolCalls;
 
     COTXCopilotHostControlBuild buildControl;
     COTXCopilotHostFormContext  formContext;
@@ -83,6 +84,9 @@ public final class COTXCopilotHostControl extends FormTemplateControl
 
         agentResponse = this.addProperty(methodstr(COTXCopilotHostControl, parmAgentResponse), Types::String);
 
+        // Tool call visibility (default: show)
+        showToolCalls   = this.addProperty(methodstr(COTXCopilotHostControl, parmShowToolCalls), Types::String);
+
     }
 
 ]]></Source>
@@ -113,6 +117,8 @@ public final class COTXCopilotHostControl extends FormTemplateControl
         SysUserInfo sysUserInfo = SysUserInfo::find();
         COTXCopilotAgentParameters agentParameters = COTXCopilotAgentParameters::findForApplicationArea(_applicationArea);
 
+        this.parmShowToolCalls(agentParameters.ShowToolUsage ? 'true' : '');
+
         if (agentParameters)
         {
             this.parmAppClientId(agentParameters.ApplicationId);
@@ -125,7 +131,7 @@ public final class COTXCopilotHostControl extends FormTemplateControl
 
             if (buildControl.parmContextScopeType() == COTXCopilotAgentContextScopeType::Local)
             {
-                this.parmSendContext("true");
+                this.parmSendContext('true');
 
                 formContext = COTXCopilotHostFormContext::construct(this.formRun());
                 formContext.onFormContextChange += eventhandler(this.formContextChange);
@@ -135,7 +141,7 @@ public final class COTXCopilotHostControl extends FormTemplateControl
             else if (COTXCopilotAgentParameters::trackGlobalContext() && buildControl.parmContextScopeType() == COTXCopilotAgentContextScopeType::Global)
             {
                 COTXCopilotHostGlobalContext globalContext = COTXCopilotHostGlobalContext::getInstance();
-                this.parmSendContext("true");
+                this.parmSendContext('true');
 
                 globalContext.onFormContextChange += eventhandler(this.formContextChange);
                 globalContext.forceFireOnChangeEvent();
@@ -519,6 +525,25 @@ public final class COTXCopilotHostControl extends FormTemplateControl
         this.parmTableName(_formContext.tableName);
         this.parmNaturalKey(_formContext.naturalKey);
         this.parmNaturalValue(_formContext.naturalValue);
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmShowToolCalls</Name>
+				<Source><![CDATA[
+    /// <summary>
+    /// Gets or sets whether tool calls should be displayed in the chat.
+    /// </summary>
+    [FormPropertyAttribute(FormPropertyKind::Value, "ShowToolCalls")]
+    public str parmShowToolCalls(str _value = showToolCalls.parmValue())
+    {
+        if (!prmIsDefault(_value))
+        {
+            showToolCalls.setValueOrBinding(_value);
+            return showToolCalls.parmValue();
+        }
+        return _value;
     }
 
 ]]></Source>
