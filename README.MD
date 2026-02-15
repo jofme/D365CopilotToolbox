@@ -1,6 +1,6 @@
 # D365 Copilot Toolbox
 
-A community-driven framework that brings **Microsoft Copilot Studio agents** into **Dynamics 365 Finance & Operations** as native, extensible form controls.
+A community-driven framework for enabling **multi-agent workflows** in **Dynamics 365 Finance & Operations**. This repository provides solutions, examples, and integrations that bring AI agents into D365 F&O to enhance business processes and user productivity.
 
 [![Build Status](../../actions/workflows/build.yml/badge.svg)](../../actions/workflows/build.yml)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
@@ -16,25 +16,52 @@ A community-driven framework that brings **Microsoft Copilot Studio agents** int
 
 ## Overview
 
-D365 Copilot Toolbox provides a ready-to-use extensible control (`COTXCopilotHostControl`) that embeds a Copilot Studio agent directly inside any D365 F&O form — either as a **global side panel** or as a **local tab embedded on a specific form**. The control handles:
+The D365 Copilot Toolbox is designed to enable **multi-agent workflows** within D365 Finance & Operations. The project includes multiple solutions and examples that demonstrate how to integrate AI agents into ERP business processes.
 
-- **MSAL.js browser-side authentication** — delegated user tokens, no server-side secrets
+### Core Solution: Copilot Studio Agent Integration
+
+The primary solution provides a ready-to-use extensible control (`COTXCopilotHostControl`) that embeds Microsoft Copilot Studio agents directly inside any D365 F&O form — either as a **global side panel** or as a **local tab embedded on a specific form**. The control handles:
+
+- **MSAL.js browser-side authentication** — application tokens with admin consent, no server-side secrets
 - **Copilot Studio Agent SDK** — connection via `@microsoft/agents-copilotstudio-client`
 - **Automatic ERP context injection** — legal entity, current form, record, navigation info sent as channel data
 - **Tool call visualization** — optional Adaptive Card display of agent tool execution
 - **Event-driven responses** — X++ delegates let form code react to agent replies
+- **Multi-agent routing** — configure different agents for different application areas
 
-## Key Features
+## Key Capabilities
+
+### Multi-Agent Workflows
+- **Application Area Routing** — Configure separate agents per business area (Sales, Inventory, Finance, etc.)
+- **Context-Aware Agents** — Agents receive ERP context (legal entity, form, record, user info)
+- **Agent Orchestration** — Coordinate multiple agents working together on complex workflows
+- **Extensible Architecture** — Add new agents and application areas without modifying core code
+
+### Integration Features
 
 | Feature | Description |
 |---------|-------------|
 | **Side Panel Agent** | Global Copilot pane available from Settings menu across all forms |
 | **Embedded Agent** | Drop the control onto any form tab with local context scope |
-| **Multi-Agent Support** | Configure separate agents per application area (e.g., Sales, Inventory) |
 | **Global Context Tracking** | Side panel automatically tracks form navigation and sends context |
 | **Local Context Tracking** | Embedded controls subscribe to their form's data source changes |
-| **Extensible Application Areas** | Define new application areas via enum extensions |
 | **Role-Based Security** | Admin and User roles with dedicated duties and privileges |
+| **Tool Call Visualization** | See which tools agents invoke and their reasoning |
+
+## Current Solutions
+
+This repository currently includes:
+
+1. **Copilot Studio Agent Integration** — The core framework for embedding Microsoft Copilot Studio agents into D365 F&O forms (detailed above)
+2. **SalesTable Example** — Reference implementation showing agent integration on the Sales Order form
+
+### Future Solutions & Examples
+
+The project is designed to grow with contributions from the community. Future solutions may include:
+- Agent orchestration patterns for complex workflows
+- Pre-built agents for common ERP tasks
+- Integration with other AI services and platforms
+- Industry-specific agent templates
 
 ## Quick Start
 
@@ -88,10 +115,14 @@ D365CopilotToolbox/
 
 ## Models
 
+The repository is organized into models that contain different solutions and examples:
+
 | Model | Module | Description | Dependencies |
 |-------|--------|-------------|--------------|
-| **Copilot Toolbox** | `CopilotToolbox` | Core framework — control, tables, security, resources | ApplicationFoundation, ApplicationPlatform, ApplicationSuite |
-| **Copilot Toolbox Examples** | `CopilotToolboxExamples` | Example integration on the SalesTable form | ApplicationPlatform, ApplicationSuite, CopilotToolbox |
+| **Copilot Toolbox** | `CopilotToolbox` | Core framework for Copilot Studio agent integration — control, tables, security, resources | ApplicationFoundation, ApplicationPlatform, ApplicationSuite |
+| **Copilot Toolbox Examples** | `CopilotToolboxExamples` | Example implementations and reference patterns (currently includes SalesTable integration) | ApplicationPlatform, ApplicationSuite, CopilotToolbox |
+
+Additional models for future solutions will be added as the project grows.
 
 ## Contact & Contribution
 

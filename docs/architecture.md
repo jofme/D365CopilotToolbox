@@ -1,6 +1,8 @@
 # Architecture
 
-This document describes the technical architecture of D365 Copilot Toolbox, including the control lifecycle, context flow, and component responsibilities.
+This document describes the technical architecture of the D365 Copilot Toolbox core solution for integrating Microsoft Copilot Studio agents into D365 Finance & Operations.
+
+The Copilot Toolbox is designed to enable **multi-agent workflows** in D365 F&O. This architecture focuses on the foundational Copilot Studio integration, which provides the framework for embedding agents, routing to different agents based on application areas, and managing context flow between D365 and AI agents.
 
 ## High-Level Architecture
 

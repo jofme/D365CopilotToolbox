@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [1.0.0] - 2026-02-15
 
+Initial release of the D365 Copilot Toolbox, establishing the foundation for multi-agent workflows in D365 Finance & Operations. This release focuses on Microsoft Copilot Studio agent integration.
+
 ### Added
 - **COTXCopilotHostControl** — extensible form control that embeds a Copilot Studio agent via the M365 Agent SDK
 - **COTXCopilotHostSidePanel** — global aside-pane form for Copilot chat, accessible from the Settings menu

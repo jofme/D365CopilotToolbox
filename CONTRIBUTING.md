@@ -1,14 +1,15 @@
 # Contributing to D365 Copilot Toolbox
 
-Thank you for your interest in contributing! We'd **love** your help making the Copilot Toolbox better.
+Thank you for your interest in contributing! We'd **love** your help making D365 multi-agent workflows better.
 
 ## Ways to Contribute
 
-- **Features** — implement new functionality
+- **New Solutions** — create new agent integrations, workflows, or examples
+- **Features** — implement new functionality in existing solutions
 - **Bug Fixes** — find and fix issues
 - **Documentation** — improve guides, add examples, fix typos
 - **Testing** — report bugs, verify fixes
-- **Ideas** — suggest new features via issues or email
+- **Ideas** — suggest new features or solutions via issues or email
 
 ## Getting Started
 

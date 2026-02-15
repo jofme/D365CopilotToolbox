@@ -2,6 +2,8 @@
 
 This guide walks you through the prerequisites, installation, and initial configuration of the D365 Copilot Toolbox.
 
+The Copilot Toolbox enables **multi-agent workflows** in D365 Finance & Operations. This guide focuses on the core Copilot Studio agent integration solution, which provides the foundation for embedding AI agents into your ERP forms and processes.
+
 ## Prerequisites
 
 ### D365 Finance & Operations
@@ -13,8 +15,9 @@ This guide walks you through the prerequisites, installation, and initial config
 - A published **Copilot Studio agent** (formerly Power Virtual Agent)
 - The agent must be deployed to a **Dataverse environment**
 - You will need:
-  - **Dataverse environment URL** (e.g., `org12345.crm.dynamics.com`)
-  - **Agent schema name** (found in Copilot Studio under agent settings)
+  - **Dataverse environment ID**
+  - **Agent schema name** 
+Both are found in Copilot Studio under agent settings
 
 ### Microsoft Entra ID (Azure AD)
 - An **App Registration** configured as a **Single Page Application (SPA)** — public client, no client secret required
