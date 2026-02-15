@@ -16,7 +16,7 @@ COTXCopilotAdminDuty=Copilot administrator
 COTXCopilotUserRole=Copilot user role
 COTXCopilotAdminRole=Copilot administrator role
 COTXDataverseEnvironment=Dataverse Environment
- ;Dataverse environment URL or identifier
+ ;Dataverse environment GUID
 COTXAgentSchemaName=Agent Schema Name
  ;Copilot Studio agent schema name in Dataverse
 COTXEntraIdAppReg=Entra ID App Registration

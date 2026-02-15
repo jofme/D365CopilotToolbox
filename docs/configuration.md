@@ -20,7 +20,7 @@ Navigate to **System Administration > Setup > Copilot Toolbox > Agent Parameters
 | Field | EDT | Required | Description |
 |-------|-----|----------|-------------|
 | **Agent Schema Name** | `COTXCopilotAgentSchemaName` | Yes | The schema name of your Copilot Studio agent. Found in Copilot Studio > Agent settings > Advanced. Format: `cr123_agentName` |
-| **Dataverse Environment** | `COTXCopilotAgentDataverseEnvironment` | Yes | The Dataverse environment identifier. This is the environment URL slug, e.g., `org12345.crm.dynamics.com` |
+| **Dataverse Environment** | `COTXCopilotAgentDataverseEnvironment` | Yes | The Dataverse environment GUID. Found in Power Platform Admin Center > Environments > [Environment Name] > Environment details, or in Copilot Studio agent settings. Format: `a1b2c3d4-1234-5678-90ab-cdef12345678` |
 
 #### Context Settings
 

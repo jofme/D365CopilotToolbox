@@ -15,9 +15,8 @@ The Copilot Toolbox enables **multi-agent workflows** in D365 Finance & Operatio
 - A published **Copilot Studio agent** (formerly Power Virtual Agent)
 - The agent must be deployed to a **Dataverse environment**
 - You will need:
-  - **Dataverse environment ID**
-  - **Agent schema name** 
-Both are found in Copilot Studio under agent settings
+  - **Dataverse environment GUID** (found in Power Platform Admin Center or Copilot Studio agent settings)
+  - **Agent schema name** (found in Copilot Studio under agent settings)
 
 ### Microsoft Entra ID (Azure AD)
 - An **App Registration** configured as a **Single Page Application (SPA)** — public client, no client secret required
@@ -60,7 +59,7 @@ Navigate to **System Administration > Users** and assign the appropriate roles:
 | **Entra ID Tenant** | Your Azure AD tenant ID | `12345678-abcd-...` |
 | **Entra ID App Registration** | The SPA app registration client ID | `87654321-dcba-...` |
 | **Agent Schema Name** | The Copilot Studio agent schema name | `cr123_myAgent` |
-| **Dataverse Environment** | The Dataverse environment ID | `org12345.crm.dynamics.com` |
+| **Dataverse Environment** | The Dataverse environment GUID | `a1b2c3d4-1234-5678-90ab-cdef12345678` |
 | **Send Global FSCM Context** | Enable to send navigation context to the agent | `Yes` |
 | **Show tool usage** | Show tool call cards in the chat UI | `Yes` |
 
