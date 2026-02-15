@@ -22,22 +22,16 @@ The D365 Copilot Toolbox is designed to enable **multi-agent workflows** within 
 
 ### Core Solution: Copilot Studio Agent Integration
 
-The primary solution provides a ready-to-use extensible control (`COTXCopilotHostControl`) that embeds Microsoft Copilot Studio agents directly inside any D365 F&O form — either as a **global side panel** or as a **local tab embedded on a specific form**. The control handles:
+The primary solution provides a ready-to-use, performant and light-weight extensible control (`COTXCopilotHostControl`) that embeds Microsoft Copilot Studio agents directly inside any D365 F&O form — either as a **global side panel** or as a **local tab embedded on a specific form**. The control handles:
 
-- **MSAL.js browser-side authentication** — application tokens with admin consent, no server-side secrets
-- **Copilot Studio Agent SDK** — connection via `@microsoft/agents-copilotstudio-client`
+- **MSAL.js browser-side authentication** — runs the agents in the context of users, with the security model from Copilot Studio
+- **Copilot Studio Agent SDK** — modern M365 Agent SDK implementation (`@microsoft/agents-copilotstudio-client`), that allows for seamless integration to Copilot Studio
 - **Automatic ERP context injection** — legal entity, current form, record, navigation info sent as channel data
-- **Tool call visualization** — optional Adaptive Card display of agent tool execution
-- **Event-driven responses** — X++ delegates let form code react to agent replies
-- **Multi-agent routing** — configure different agents for different application areas
-
-## Key Capabilities
-
-### Multi-Agent Workflows
+- **Tool call visualization** — optional Adaptive Card display of agent tool execution, and reasoning/thought
+- **Event-driven responses** — X++ delegates let form code react to agent replies - Usage as the control as a Copilot proxy
 - **Application Area Routing** — Configure separate agents per business area (Sales, Inventory, Finance, etc.)
-- **Context-Aware Agents** — Agents receive ERP context (legal entity, form, record, user info)
-- **Agent Orchestration** — Coordinate multiple agents working together on complex workflows
 - **Extensible Architecture** — Add new agents and application areas without modifying core code
+
 
 ### Integration Features
 

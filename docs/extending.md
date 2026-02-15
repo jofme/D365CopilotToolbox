@@ -10,66 +10,6 @@ There are two approaches: **embedded (local context)** and **global (side panel)
 
 This places the Copilot chat directly on a form tab. The agent receives context specific to that form's active record.
 
-#### Step 1: Define an Application Area
-
-Create an **enum extension** on `COTXCopilotAgentApplicationArea` in your model:
-
-```xml
-<!-- AxEnumExtension: COTXCopilotAgentApplicationArea.YourModel.xml -->
-<?xml version="1.0" encoding="utf-8"?>
-<AxEnumExtension xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
-    <Name>COTXCopilotAgentApplicationArea.YourModel</Name>
-    <EnumValues>
-        <AxEnumValue>
-            <Name>YourFormArea</Name>
-            <Label>Your Form Name</Label>
-        </AxEnumValue>
-    </EnumValues>
-    <PropertyModifications />
-    <ValueModifications />
-</AxEnumExtension>
-```
-
-#### Step 2: Add the Control to Your Form
-
-Create a **form extension** or modify your form directly to add the `COTXCopilotHostControl`:
-
-```xml
-<!-- Example form extension adding Copilot to a tab page -->
-<AxFormControl>
-    <Name>CopilotAgentHost</Name>
-    <Height>400</Height>
-    <HeightMode>Manual</HeightMode>
-    <WidthMode>SizeToAvailable</WidthMode>
-    <FormControlExtension>
-        <Name>COTXCopilotHostControl</Name>
-        <ExtensionComponents />
-        <ExtensionProperties>
-            <AxFormControlExtensionProperty>
-                <Name>parmCopilotContext</Name>
-                <Type>Enum</Type>
-                <TypeName>COTXCopilotAgentApplicationArea</TypeName>
-                <Value>YourFormArea</Value>
-            </AxFormControlExtensionProperty>
-            <AxFormControlExtensionProperty>
-                <Name>parmContextScopeType</Name>
-                <Type>Enum</Type>
-                <TypeName>COTXCopilotAgentContextScopeType</TypeName>
-                <Value>Local</Value>
-            </AxFormControlExtensionProperty>
-        </ExtensionProperties>
-    </FormControlExtension>
-</AxFormControl>
-```
-
-#### Step 3: Configure the Agent Mapping
-
-In D365, go to **System Administration > Setup > Copilot Toolbox > Agent Parameters**:
-
-1. Create or select a parameter record
-2. On the **Available In** tab, add a row for your new application area
-3. The agent mapped to this area will be used when the form loads
-
 ### Complete Example: SalesTable
 
 The `CopilotToolboxExamples` model demonstrates this pattern:
