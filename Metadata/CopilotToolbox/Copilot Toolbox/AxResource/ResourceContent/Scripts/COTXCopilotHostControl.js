@@ -787,6 +787,7 @@
             })
             .then(function (directLine) {
                 self._directLine = directLine;
+                self._keepConnectionAlive = !!$dyn.peek(data.KeepConnectionAlive);
 
                 var store = createStore(data);
 
@@ -797,6 +798,7 @@
                 }, element);
 
                 observePendingMessages(data, store);
+
             });
     }
 
@@ -819,8 +821,8 @@
         /** @type {Object|null} Direct Line connection reference (for cleanup). */
         this._directLine = null;
 
-        /** @type {HTMLElement} The host DOM element. */
-        this._element = element;
+        /** @type {boolean} When true, the Direct Line connection is kept alive on dispose. */
+        this._keepConnectionAlive = false;
     };
 
     $dyn.controls.COTXCopilotHostControl.prototype = $dyn.ui.extendPrototype($dyn.ui.Control.prototype, {
@@ -854,7 +856,6 @@
                 });
         },
 
-        //TODO: JOFME PARAM HERE! MCP Servers that performs actions might make sense to work in the background
         /**
          * Lifecycle hook called by the D365 control framework when the control
          * is being destroyed (e.g. form close, navigation). Terminates the
@@ -864,12 +865,13 @@
          */
         dispose: function () {
             if (this._directLine) {
-                if (typeof this._directLine.end === 'function') {
+                if (this._keepConnectionAlive) {
+                    console.log(LOG_PREFIX + '.dispose: KeepConnectionAlive is set — Direct Line connection preserved');
+                } else if (typeof this._directLine.end === 'function') {
                     this._directLine.end();
+                    this._directLine = null;
                     console.log(LOG_PREFIX + '.dispose: Direct Line connection ended');
                 }
-
-                this._directLine = null;
             }
 
             // Reset module state so a fresh control instance starts clean

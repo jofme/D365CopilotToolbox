@@ -1,4 +1,4 @@
-# Configuration
+﻿# Configuration
 
 This document provides a detailed reference for configuring the D365 Copilot Toolbox.
 
@@ -28,6 +28,8 @@ Navigate to **System Administration > Setup > Copilot Toolbox > Agent Parameters
 |-------|-----|-------------|
 | **Send Global FSCM Context** | `COTXCopilotSendGlobalContext` | When enabled (`Yes`), the global side panel sends ERP context (legal entity, current form, record info) with each message to the agent. |
 | **Show tool usage** | `COTXCopilotHostShowToolUsage` | When enabled (`Yes`), tool call details are displayed as Adaptive Cards in the chat, showing which tools the agent invoked and its reasoning. |
+| **Show thoughts** | `COTXCopilotHostShowThoughts` | When enabled (`Yes`), the agent's chain-of-thought reasoning is rendered as subtle chat bubbles, giving visibility into the agent's decision-making process. |
+| **Keep connection alive** | `COTXCopilotHostKeepConnectionAlive` | When enabled (`Yes`), the Direct Line connection to Copilot Studio is preserved when the control is disposed (e.g. form close or navigation). |
 
 ### Available In Tab
 

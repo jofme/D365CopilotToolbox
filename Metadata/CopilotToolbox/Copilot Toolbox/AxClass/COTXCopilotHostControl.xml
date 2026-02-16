@@ -38,6 +38,7 @@ public final class COTXCopilotHostControl extends FormTemplateControl
     FormProperty agentResponse;
     FormProperty showToolCalls;
     FormProperty showThoughts;
+    FormProperty keepConnectionAlive;
 
     COTXCopilotHostControlBuild buildControl;
     COTXCopilotHostFormContext  formContext;
@@ -85,8 +86,9 @@ public final class COTXCopilotHostControl extends FormTemplateControl
 
         agentResponse = this.addProperty(methodstr(COTXCopilotHostControl, parmAgentResponse), Types::String);
 
-        showToolCalls   = this.addProperty(methodstr(COTXCopilotHostControl, parmShowToolCalls), Types::String);
-        showThoughts   = this.addProperty(methodstr(COTXCopilotHostControl, parmShowThoughts), Types::String);
+        showToolCalls       = this.addProperty(methodstr(COTXCopilotHostControl, parmShowToolCalls), Types::String);
+        showThoughts        = this.addProperty(methodstr(COTXCopilotHostControl, parmShowThoughts), Types::String);
+        keepConnectionAlive = this.addProperty(methodstr(COTXCopilotHostControl, parmKeepConnectionAlive), Types::String);
 
     }
 
@@ -120,7 +122,8 @@ public final class COTXCopilotHostControl extends FormTemplateControl
         COTXCopilotAgentParameters agentParameters = COTXCopilotAgentParameters::findForApplicationArea(_applicationArea);
 
         this.parmShowToolCalls(agentParameters.ShowToolUsage ? 'true' : '');
-        this.parmShowThoughts('true'); //TODO: Make parameter for this!
+        this.parmShowThoughts(agentParameters.ShowThoughts ? 'true' : '');
+        this.parmKeepConnectionAlive(agentParameters.KeepConnectionAlive ? 'true' : '');
 
         if (agentParameters)
         {
@@ -566,6 +569,22 @@ public final class COTXCopilotHostControl extends FormTemplateControl
         {
             showThoughts.setValueOrBinding(_value);
             return showThoughts.parmValue();
+        }
+        return _value;
+    }
+
+]]></Source>
+			</Method>
+			<Method>
+				<Name>parmKeepConnectionAlive</Name>
+				<Source><![CDATA[
+    [FormPropertyAttribute(FormPropertyKind::Value, "KeepConnectionAlive")]
+    public str parmKeepConnectionAlive(str _value = keepConnectionAlive.parmValue())
+    {
+        if (!prmIsDefault(_value))
+        {
+            keepConnectionAlive.setValueOrBinding(_value);
+            return keepConnectionAlive.parmValue();
         }
         return _value;
     }

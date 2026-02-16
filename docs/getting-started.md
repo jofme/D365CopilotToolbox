@@ -1,4 +1,4 @@
-# Getting Started
+﻿# Getting Started
 
 This guide walks you through the prerequisites, installation, and initial configuration of the D365 Copilot Toolbox.
 
@@ -62,6 +62,8 @@ Navigate to **System Administration > Users** and assign the appropriate roles:
 | **Dataverse Environment** | The Dataverse environment GUID | `a1b2c3d4-1234-5678-90ab-cdef12345678` |
 | **Send Global FSCM Context** | Enable to send navigation context to the agent | `Yes` |
 | **Show tool usage** | Show tool call cards in the chat UI | `Yes` |
+| **Show thoughts** | Display the agent's chain-of-thought reasoning in the chat | `No` |
+| **Keep connection alive** | Preserve the connection to the Copilot Studio agent. Reasoning will be showed in the console  | `No` |
 
 ### 3. Map Application Areas
 

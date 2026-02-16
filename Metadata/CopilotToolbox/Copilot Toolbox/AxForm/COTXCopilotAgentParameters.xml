@@ -42,6 +42,9 @@ public class COTXCopilotAgentParameters extends FormRun
 					<DataField>Description</DataField>
 				</AxFormDataSourceField>
 				<AxFormDataSourceField>
+					<DataField>KeepConnectionAlive</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
 					<DataField>ModifiedBy</DataField>
 				</AxFormDataSourceField>
 				<AxFormDataSourceField>
@@ -58,6 +61,12 @@ public class COTXCopilotAgentParameters extends FormRun
 				</AxFormDataSourceField>
 				<AxFormDataSourceField>
 					<DataField>SendGlobalContext</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ShowThoughts</DataField>
+				</AxFormDataSourceField>
+				<AxFormDataSourceField>
+					<DataField>ShowToolUsage</DataField>
 				</AxFormDataSourceField>
 				<AxFormDataSourceField>
 					<DataField>TableId</DataField>
@@ -330,9 +339,47 @@ public class COTXCopilotAgentParameters extends FormRun
 								<DataGroup>Context</DataGroup>
 								<DataSource>COTXCopilotAgentParameters</DataSource>
 							</AxFormControl>
+							<AxFormControl xmlns=""
+								i:type="AxFormGroupControl">
+								<Name>AgentBehaviour</Name>
+								<Type>Group</Type>
+								<FormControlExtension
+									i:nil="true" />
+								<Controls>
+									<AxFormControl xmlns=""
+										i:type="AxFormCheckBoxControl">
+										<Name>AgentBehaviour_ShowToolUsage</Name>
+										<Type>CheckBox</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<DataField>ShowToolUsage</DataField>
+										<DataSource>COTXCopilotAgentParameters</DataSource>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormCheckBoxControl">
+										<Name>AgentBehaviour_ShowThoughts</Name>
+										<Type>CheckBox</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<DataField>ShowThoughts</DataField>
+										<DataSource>COTXCopilotAgentParameters</DataSource>
+									</AxFormControl>
+									<AxFormControl xmlns=""
+										i:type="AxFormCheckBoxControl">
+										<Name>AgentBehaviour_KeepConnectionAlive</Name>
+										<Type>CheckBox</Type>
+										<FormControlExtension
+											i:nil="true" />
+										<DataField>KeepConnectionAlive</DataField>
+										<DataSource>COTXCopilotAgentParameters</DataSource>
+									</AxFormControl>
+								</Controls>
+								<DataGroup>AgentBehaviour</DataGroup>
+								<DataSource>COTXCopilotAgentParameters</DataSource>
+							</AxFormControl>
 						</Controls>
 						<ColumnsMode>Fill</ColumnsMode>
-					<Caption>@CopilotToolbox:COTXCopilotStudio</Caption>
+						<Caption>@CopilotToolbox:COTXCopilotStudio</Caption>
 					</AxFormControl>
 					<AxFormControl xmlns=""
 						i:type="AxFormTabPageControl">
