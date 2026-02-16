@@ -10,33 +10,37 @@ Navigate to **System Administration > Setup > Copilot Toolbox > Agent Parameters
 
 #### Entra ID Settings
 
-| Field | EDT | Required | Description |
-|-------|-----|----------|-------------|
-| **Entra ID Tenant** | `COTXCopilotEntraIdTenantId` | Yes | The Azure AD / Entra ID tenant GUID. Found in Azure Portal > Microsoft Entra ID > Overview. |
-| **Entra ID App Registration** | `COTXCopilotEntraIdAppRegId` | Yes | The Application (client) ID of the SPA app registration. Found in Azure Portal > App registrations. |
+| Name |  Required | Description |
+|------|-----------|-------------|
+| **Entra ID Tenant** | Yes | The Azure AD / Entra ID tenant GUID. Found in Azure Portal > Microsoft Entra ID > Overview. |
+| **Entra ID App Registration** | Yes | The Application (client) ID of the SPA app registration. Found in Azure Portal > App registrations. |
 
 #### Dataverse Settings
 
-| Field | EDT | Required | Description |
-|-------|-----|----------|-------------|
-| **Agent Schema Name** | `COTXCopilotAgentSchemaName` | Yes | The schema name of your Copilot Studio agent. Found in Copilot Studio > Agent settings > Advanced. Format: `cr123_agentName` |
-| **Dataverse Environment** | `COTXCopilotAgentDataverseEnvironment` | Yes | The Dataverse environment GUID. Found in Power Platform Admin Center > Environments > [Environment Name] > Environment details, or in Copilot Studio agent settings. Format: `a1b2c3d4-1234-5678-90ab-cdef12345678` |
+| name |  Required | Description |
+|-------|----------|-------------|
+| **Agent Schema Name** | Yes | The schema name of your Copilot Studio agent. Found in Copilot Studio > Agent settings > Advanced. Format: `cr123_agentName` |
+| **Dataverse Environment** | Yes | The Dataverse environment GUID. Found in Power Platform Admin Center > Environments > [Environment Name] > Environment details, or in Copilot Studio agent settings. Format: `a1b2c3d4-1234-5678-90ab-cdef12345678` |
 
 #### Context Settings
 
-| Field | EDT | Description |
-|-------|-----|-------------|
-| **Send Global FSCM Context** | `COTXCopilotSendGlobalContext` | When enabled (`Yes`), the global side panel sends ERP context (legal entity, current form, record info) with each message to the agent. |
-| **Show tool usage** | `COTXCopilotHostShowToolUsage` | When enabled (`Yes`), tool call details are displayed as Adaptive Cards in the chat, showing which tools the agent invoked and its reasoning. |
-| **Show thoughts** | `COTXCopilotHostShowThoughts` | When enabled (`Yes`), the agent's chain-of-thought reasoning is rendered as subtle chat bubbles, giving visibility into the agent's decision-making process. |
-| **Keep connection alive** | `COTXCopilotHostKeepConnectionAlive` | When enabled (`Yes`), the Direct Line connection to Copilot Studio is preserved when the control is disposed (e.g. form close or navigation). |
+| Name |  Description |
+|------|--------------|
+| **Send Global FSCM Context** | When enabled (`Yes`), the global side panel sends ERP context (legal entity, current form, record info) with each message to the agent. |
+
+#### Agent Behaviour Settings
+| Name |  Description |
+|------|--------------|
+| **Show tool usage** |  When enabled (`Yes`), tool call details are displayed as Adaptive Cards in the chat, showing which tools the agent invoked as a debug/progress aid. This may surface internal implementation details. |
+| **Show thoughts** | When enabled (`Yes`), intermediate agent progress/thought summaries are rendered as subtle chat bubbles to help with debugging and monitoring. This may expose sensitive or internal model information. |
+| **Keep connection alive option** | When enabled, `dispose()` skips terminating the Direct Line connection (A work-around to keep long-running agents alive) |
 
 ### Available In Tab
 
 This tab maps application areas to the current agent configuration. Each row associates a `COTXCopilotAgentApplicationArea` enum value with this parameter record.
 
 | Application Area | Description |
-|-------------------|-------------|
+|------------------|-------------|
 | **Fallback** | Default fallback agent. Used when no specific mapping exists for a requested application area. |
 | **Side Panel** | The global Copilot side panel accessible from the Settings menu. |
 | *(Custom areas)* | Additional areas defined via enum extensions in other models. |

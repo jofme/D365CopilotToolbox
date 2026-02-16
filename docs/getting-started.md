@@ -61,9 +61,9 @@ Navigate to **System Administration > Users** and assign the appropriate roles:
 | **Agent Schema Name** | The Copilot Studio agent schema name | `cr123_myAgent` |
 | **Dataverse Environment** | The Dataverse environment GUID | `a1b2c3d4-1234-5678-90ab-cdef12345678` |
 | **Send Global FSCM Context** | Enable to send navigation context to the agent | `Yes` |
-| **Show tool usage** | Show tool call cards in the chat UI | `Yes` |
-| **Show thoughts** | Display the agent's chain-of-thought reasoning in the chat | `No` |
-| **Keep connection alive** | Preserve the connection to the Copilot Studio agent. Reasoning will be showed in the console  | `No` |
+| **Show tool usage** | `COTXCopilotHostShowToolUsage` | When enabled (`Yes`), tool call details are displayed as Adaptive Cards in the chat, showing which tools the agent invoked as a debug/progress aid. This may surface internal implementation details. |
+| **Show thoughts** | `COTXCopilotHostShowThoughts` | When enabled (`Yes`), intermediate agent progress/thought summaries are rendered as subtle chat bubbles to help with debugging and monitoring. This may expose sensitive or internal model information. |
+| **Keep connection alive option** | When enabled, `dispose()` skips terminating the Direct Line connection (A work-around to keep long-running agents alive) |
 
 ### 3. Map Application Areas
 
