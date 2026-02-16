@@ -1,8 +1,50 @@
 ﻿(function () {
     'use strict';
 
+    // -----------------------------------------------------------------------
+    // Constants
+    // -----------------------------------------------------------------------
+
+    /** @type {string} CDN URL for the Copilot Studio Agent SDK browser bundle. */
     var COPILOT_SDK_URL = 'https://unpkg.com/@microsoft/agents-copilotstudio-client@1.2.3/dist/src/browser.mjs';
 
+    /** @type {number} Maximum number of animation-frame ticks to wait for dependencies. */
+    var MAX_RENDER_ATTEMPTS = 60;
+
+    /** @type {string} Log prefix */
+    var LOG_PREFIX = 'COTXCopilotHostControl';
+
+    /** Direct Line / WebChat action type constants. */
+    var ACTION_TYPES = {
+        POST_ACTIVITY: 'DIRECT_LINE/POST_ACTIVITY',
+        INCOMING_ACTIVITY: 'DIRECT_LINE/INCOMING_ACTIVITY',
+        SEND_MESSAGE: 'WEB_CHAT/SEND_MESSAGE'
+    };
+
+    /** Copilot Studio Dynamic Plan event names. */
+    var EVENT_NAMES = {
+        PLAN_RECEIVED: 'DynamicPlanReceived',
+        PLAN_STEP_TRIGGERED: 'DynamicPlanStepTriggered'
+    };
+
+    /** Activity type constants. */
+    var ACTIVITY_TYPES = {
+        MESSAGE: 'message',
+        TYPING: 'typing',
+        EVENT: 'event'
+    };
+
+    /** Entity type constants found in activity.entities[]. */
+    var ENTITY_TYPES = {
+        THOUGHT: 'thought'
+    };
+
+    /** Thought status constants. */
+    var THOUGHT_STATUS = {
+        COMPLETE: 'complete'
+    };
+
+    /** WebChat visual style overrides. */
     var STYLE_OPTIONS = {
         accent: '#7B68EE',
         autoScrollSnapOnPage: true,
@@ -58,26 +100,39 @@
         rootWidth: '100%',
         hideScrollToEndButton: false,
         markdownRenderHTML: true,
-        // Enable emoji support
         emojiSet: true
     };
 
-    var MAX_RENDER_ATTEMPTS = 60;
+    // -----------------------------------------------------------------------
+    // Module-scoped mutable state
+    // -----------------------------------------------------------------------
 
-    var waitingForBotReply = false;
+    /**
+     * Shared runtime state for the control instance.
+     *
+     * @property {boolean}  waitingForBotReply - True while we expect the next
+     *           bot message to be the response to a programmatic X++ send.
+     * @property {Object.<string, {tools: Array, cardSent: boolean}>} toolCalls
+     *           - Tracks Dynamic Plan tool definitions keyed by plan identifier.
+     */
+    var _state = {
+        waitingForBotReply: false,
+        toolCalls: {}
+    };
 
     // -----------------------------------------------------------------------
-    // Token acquisition via MSAL.js (delegated permissions — no secret needed)
+    // Token acquisition via MSAL.js
     // -----------------------------------------------------------------------
 
     /**
      * Acquires a delegated user token for the Power Platform API using MSAL.js.
+     *
      * Tries silent acquisition first (leveraging the D365 Entra ID session),
      * then falls back to a popup if interaction is required.
      *
-     * @param {string} appClientId  - App registration client ID (SPA / public client)
-     * @param {string} tenantId     - Entra ID tenant ID
-     * @returns {Promise<string>}   - The access token
+     * @param {string} appClientId - App registration client ID (SPA / public client).
+     * @param {string} tenantId    - Entra ID tenant ID.
+     * @returns {Promise<string>}    The access token string.
      */
     function acquireToken(appClientId, tenantId) {
         var msalConfig = {
@@ -101,7 +156,6 @@
             var accounts = msalInstance.getAllAccounts();
 
             if (accounts.length > 0) {
-                // Try silent token acquisition using existing session
                 return msalInstance.acquireTokenSilent({
                     scopes: loginRequest.scopes,
                     account: accounts[0],
@@ -109,15 +163,13 @@
                 }).then(function (response) {
                     return response.accessToken;
                 }).catch(function (silentError) {
-                    // Silent failed — fall back to popup
-                    console.warn('COTXCopilotHostControl: Silent token failed, trying popup', silentError);
+                    console.warn(LOG_PREFIX + '.acquireToken: Silent token failed, trying popup', silentError);
                     return msalInstance.acquireTokenPopup(loginRequest).then(function (response) {
                         return response.accessToken;
                     });
                 });
             }
 
-            // No cached accounts — use popup
             return msalInstance.acquireTokenPopup(loginRequest).then(function (response) {
                 return response.accessToken;
             });
@@ -125,235 +177,465 @@
     }
 
     // -----------------------------------------------------------------------
-    // WebChat store middleware — injects ERP context into outgoing messages
+    // Store middleware — individual handlers
     // -----------------------------------------------------------------------
 
-    function createStore(data) {
-        var shouldSendContext = function () {
-            return !!$dyn.peek(data.SendContext);
+    /**
+     * Determines whether the given action is a typing indicator that should be
+     * suppressed (dropped before reaching the WebChat renderer).
+     *
+     * @param {Object} action - Redux action dispatched through the WebChat store.
+     * @returns {boolean} True if the action should be discarded.
+     */
+    function isTypingIndicator(action) {
+        if (action.type !== ACTION_TYPES.INCOMING_ACTIVITY) {
+            return false;
+        }
+
+        var activity = action.payload && action.payload.activity;
+
+        return !!(activity && activity.type === ACTIVITY_TYPES.TYPING);
+    }
+
+    /**
+     * If the action is an outgoing user message and context sending is enabled,
+     * returns a shallow clone of the action with ERP context attached to
+     * `channelData.context`. Otherwise returns the original action unchanged.
+     *
+     * @param {Object} action - Redux action.
+     * @param {Object} data   - D365 control data bindings.
+     * @returns {Object} The (possibly enriched) action.
+     */
+    function enrichOutgoingActivity(action, data) {
+        if (action.type !== ACTION_TYPES.POST_ACTIVITY) {
+            return action;
+        }
+
+        var activity = action.payload.activity;
+
+        if (activity.type !== ACTIVITY_TYPES.MESSAGE) {
+            return action;
+        }
+
+        if (!$dyn.peek(data.SendContext)) {
+            return action;
+        }
+
+        var erpContext = {
+            userLanguage: $dyn.peek(data.UserLanguage),
+            userTimeZone: $dyn.peek(data.UserTimeZone),
+            callingMethod: $dyn.peek(data.CallingMethod),
+            legalEntity: $dyn.peek(data.LegalEntity),
+            currentUser: $dyn.peek(data.UserId),
+            currentForm: $dyn.peek(data.CurrentFormName),
+            currentMenuItem: $dyn.peek(data.CurrentMenuItem),
+            formMode: $dyn.peek(data.FormMode),
+            currentRecord: {
+                tableName: $dyn.peek(data.TableName),
+                naturalKey: $dyn.peek(data.NaturalKey),
+                naturalValue: $dyn.peek(data.NaturalValue)
+            }
         };
 
+        return Object.assign({}, action, {
+            payload: Object.assign({}, action.payload, {
+                activity: Object.assign({}, activity, {
+                    channelData: Object.assign({}, activity.channelData, {
+                        context: erpContext
+                    })
+                })
+            })
+        });
+    }
+
+    /**
+     * Inspects an incoming bot message. If we are waiting for a programmatic
+     * reply (X++ sent a message via PendingMessage), captures the first
+     * non-tool-thought bot text and forwards it to X++ through
+     * `data.RaiseAgentResponse`.
+     *
+     * @param {Object} action - Redux action.
+     * @param {Object} data   - D365 control data bindings.
+     * @returns {void}
+     */
+    function captureAgentResponse(action, data) {
+        if (action.type !== ACTION_TYPES.INCOMING_ACTIVITY) {
+            return;
+        }
+
+        var activity = action.payload && action.payload.activity;
+
+        if (!activity || activity.type !== ACTIVITY_TYPES.MESSAGE) {
+            return;
+        }
+
+        if (activity.from.role !== 'bot' || !activity.text) {
+            return;
+        }
+
+        if (!_state.waitingForBotReply) {
+            return;
+        }
+
+        var isToolThought = activity.channelData && activity.channelData.isToolThought;
+
+        if (isToolThought) {
+            return;
+        }
+
+        _state.waitingForBotReply = false;
+        $dyn.callFunction(data.RaiseAgentResponse, null, [activity.text]);
+    }
+
+    // -----------------------------------------------------------------------
+    // Dynamic Plan / tool-call card building
+    // -----------------------------------------------------------------------
+
+    /**
+     * Builds an Adaptive Card JSON object that visualises one or more tool
+     * calls, each with an expandable "Show Thoughts" section.
+     *
+     * @param {Array<{llmIdentifierPrefix: string, description: string, thought: string}>} tools
+     *        - Array of tool metadata objects.
+     * @returns {Object} Adaptive Card payload.
+     */
+    function buildToolCallCard(tools) {
+        var card = {
+            "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
+            "type": "AdaptiveCard",
+            "version": "1.6",
+            "body": [
+                {
+                    "type": "TextBlock",
+                    "text": "🔧 Tool Call",
+                    "weight": "Bolder",
+                    "size": "Small"
+                }
+            ]
+        };
+
+        tools.forEach(function (tool) {
+            card.body.push({
+                "type": "Container",
+                "spacing": "Small",
+                "separator": true,
+                "items": [
+                    {
+                        "type": "ColumnSet",
+                        "columns": [
+                            {
+                                "type": "Column",
+                                "width": "auto",
+                                "items": [
+                                    {
+                                        "type": "TextBlock",
+                                        "text": "⚡",
+                                        "size": "Small"
+                                    }
+                                ]
+                            },
+                            {
+                                "type": "Column",
+                                "width": "stretch",
+                                "items": [
+                                    {
+                                        "type": "TextBlock",
+                                        "text": tool.llmIdentifierPrefix,
+                                        "weight": "Bolder",
+                                        "wrap": true,
+                                        "size": "Small"
+                                    },
+                                    {
+                                        "type": "TextBlock",
+                                        "text": tool.description,
+                                        "isSubtle": true,
+                                        "spacing": "None",
+                                        "wrap": true,
+                                        "size": "Small"
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "type": "ActionSet",
+                        "spacing": "Small",
+                        "actions": [
+                            {
+                                "type": "Action.ShowCard",
+                                "title": "💭 Show Thoughts",
+                                "card": {
+                                    "type": "AdaptiveCard",
+                                    "body": [
+                                        {
+                                            "type": "TextBlock",
+                                            "text": tool.thought,
+                                            "wrap": true,
+                                            "size": "Small",
+                                            "isSubtle": true
+                                        }
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+                ]
+            });
+        });
+
+        return card;
+    }
+
+    /**
+     * Builds a plain-text summary of tool calls for use as a chat message
+     * instead of an Adaptive Card.
+     *
+     * @param {Array<{llmIdentifierPrefix: string, description: string}>} tools
+     *        - Array of tool metadata objects.
+     * @returns {string} Markdown-formatted tool call summary.
+     */
+    function buildToolCallText(tools) {
+        var lines = ['🔧 **Tool Call**'];
+
+        tools.forEach(function (tool) {
+            lines.push('⚡ **' + tool.llmIdentifierPrefix + '** — ' + tool.description);
+        });
+
+        return lines.join('\n\n');
+    }
+
+    /**
+     * Stores tool definitions when a `DynamicPlanReceived` event arrives.
+     *
+     * @param {Object} planValue - The `activity.value` from the plan event.
+     * @returns {void}
+     */
+    function handlePlanReceived(planValue) {
+        var planId = planValue.planIdentifier;
+
+        _state.toolCalls[planId] = {
+            tools: (planValue.toolDefinitions || []).map(function (tool, index) {
+                return {
+                    id: index.toString(),
+                    llmIdentifierPrefix: tool.llmIdentifierPrefix || tool.displayName,
+                    description: tool.description || '',
+                    identifier: tool.identifier,
+                    thought: 'Waiting for agent reasoning...'
+                };
+            }),
+            cardSent: false
+        };
+
+        console.log(LOG_PREFIX + '.handlePlanReceived: Plan registered', planId);
+    }
+
+    /**
+     * Updates the matching tool's thought text when a
+     * `DynamicPlanStepTriggered` event arrives. If this is the first step for
+     * the plan and tool-call display is enabled, injects an Adaptive Card into
+     * the WebChat conversation.
+     *
+     * @param {Object}   stepValue    - The `activity.value` from the step event.
+     * @param {Object}   data         - D365 control data bindings.
+     * @param {Function} dispatchNext - The store's `next` function for injecting activities.
+     * @returns {void}
+     */
+    function handlePlanStepTriggered(stepValue, data, dispatchNext) {
+        var planId = stepValue.planIdentifier;
+        var thought = stepValue.thought || '';
+        var planData = _state.toolCalls[planId];
+
+        if (!planData) {
+            return;
+        }
+
+        // Update the matching tool with its thought
+        planData.tools.forEach(function (tool) {
+            if (stepValue.taskDialogId && stepValue.taskDialogId.indexOf(tool.identifier) !== -1) {
+                tool.thought = thought;
+            }
+        });
+
+        var showToolCalls = !!$dyn.peek(data.ShowToolCalls);
+        var showThoughts = !!$dyn.peek(data.ShowThoughts);
+
+        if (planData.cardSent || planData.tools.length === 0 || !showToolCalls) {
+            console.log(LOG_PREFIX + '.handlePlanStepTriggered:', thought);
+            return;
+        }
+
+        planData.cardSent = true;
+
+        var cardActivity;
+
+        if (showThoughts) {
+            // Plain text message — avoids Adaptive Card scroll issues
+            cardActivity = {
+                type: ACTIVITY_TYPES.MESSAGE,
+                from: { role: 'bot' },
+                text: buildToolCallText(planData.tools),
+                channelData: { isToolThought: true }
+            };
+        } else {
+            // Adaptive Card with expandable thought sections
+            cardActivity = {
+                type: ACTIVITY_TYPES.MESSAGE,
+                from: { role: 'bot' },
+                attachments: [{
+                    contentType: 'application/vnd.microsoft.card.adaptive',
+                    content: buildToolCallCard(planData.tools)
+                }],
+                channelData: { isToolThought: true }
+            };
+        }
+
+        dispatchNext({
+            type: ACTION_TYPES.INCOMING_ACTIVITY,
+            payload: { activity: cardActivity }
+        });
+
+        console.log(LOG_PREFIX + '.handlePlanStepTriggered:', thought);
+    }
+
+    /**
+     * Processes Dynamic Plan event activities (`DynamicPlanReceived` and
+     * `DynamicPlanStepTriggered`). These events visualise which tools/actions
+     * the Copilot Studio orchestrator is invoking.
+     *
+     * @param {Object}   action       - Redux action.
+     * @param {Object}   data         - D365 control data bindings.
+     * @param {Function} dispatchNext - The store's `next` function.
+     * @returns {boolean} True if the action was a plan event and was consumed
+     *          (caller should **not** forward it to `next`).
+     */
+    function handleDynamicPlanEvents(action, data, dispatchNext) {
+        if (action.type !== ACTION_TYPES.INCOMING_ACTIVITY) {
+            return false;
+        }
+
+        var activity = action.payload && action.payload.activity;
+
+        if (!activity || activity.type !== ACTIVITY_TYPES.EVENT) {
+            return false;
+        }
+
+        if (activity.name === EVENT_NAMES.PLAN_RECEIVED && activity.value) {
+            handlePlanReceived(activity.value);
+        }
+
+        if (activity.name === EVENT_NAMES.PLAN_STEP_TRIGGERED && activity.value) {
+            handlePlanStepTriggered(activity.value, data, dispatchNext);
+        }
+
+        // All event-type activities are consumed — don't pass to WebChat
+        return true;
+    }
+
+    // -----------------------------------------------------------------------
+    // Thought / chain-of-thought bubble injection
+    // -----------------------------------------------------------------------
+
+    /**
+     * Extracts a completed "thought" entity from a typing activity and injects
+     * it as a visible bot message in the WebChat conversation.
+     *
+     * The thought is rendered as an italicised, subtle chat bubble so the user
+     * can see the agent's reasoning without confusing it with actual replies.
+     *
+     * @param {Object}   action       - Redux action.
+     * @param {Object}   data         - D365 control data bindings.
+     * @param {Function} dispatchNext - The store's `next` function for injecting activities.
+     * @returns {boolean} True if a thought was injected (caller may still
+     *          forward or suppress the original action as desired).
+     */
+    function handleCompletedThoughts(action, data, dispatchNext) {
+        if (action.type !== ACTION_TYPES.INCOMING_ACTIVITY) {
+            return false;
+        }
+
+        var activity = action.payload && action.payload.activity;
+
+        if (!activity || activity.type !== ACTIVITY_TYPES.TYPING) {
+            return false;
+        }
+
+        if (!$dyn.peek(data.ShowThoughts)) {
+            return false;
+        }
+
+        var entities = activity.entities;
+
+        if (!entities || !entities.length) {
+            return false;
+        }
+
+        var injected = false;
+
+        entities.forEach(function (entity) {
+            if (entity.type !== ENTITY_TYPES.THOUGHT) {
+                return;
+            }
+
+            if (entity.status !== THOUGHT_STATUS.COMPLETE) {
+                return;
+            }
+
+            if (!entity.text) {
+                return;
+            }
+
+            var thoughtText = '💭 ' + entity.text;
+
+            var thoughtActivity = {
+                type: ACTIVITY_TYPES.MESSAGE,
+                from: { role: 'bot' },
+                text: thoughtText,
+                channelData: { isToolThought: true }
+            };
+
+            dispatchNext({
+                type: ACTION_TYPES.INCOMING_ACTIVITY,
+                payload: { activity: thoughtActivity }
+            });
+
+            console.log(LOG_PREFIX + '.handleCompletedThoughts: Injected thought —', entity.title);
+            injected = true;
+        });
+
+        return injected;
+    }
+
+    // -----------------------------------------------------------------------
+    // WebChat store creation
+    // -----------------------------------------------------------------------
+
+    /**
+     * Creates a WebChat Redux store with middleware that:
+     *  1. Suppresses typing indicators.
+     *  2. Enriches outgoing messages with ERP context.
+     *  3. Captures bot replies destined for X++.
+     *  4. Handles Dynamic Plan tool-call events.
+     *
+     * @param {Object} data - D365 control data bindings.
+     * @returns {Object} A WebChat Redux store instance.
+     */
+    function createStore(data) {
         return window.WebChat.createStore({}, function () {
             return function (next) {
                 return function (action) {
-                    // AGGRESSIVE FILTER: Drop typing indicators immediately before any processing
-                    if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
-                        var activity = action.payload && action.payload.activity;
+                    // Inject completed thoughts before suppressing the typing indicator
+                    handleCompletedThoughts(action, data, next);
 
-                        // Drop typing indicators completely - don't even call next()
-                        if (activity && activity.type === 'typing') {
-                            return; // Exit early without processing
-                        }
-                    }                        
-
-                    if (action.type === 'DIRECT_LINE/POST_ACTIVITY'
-                        && action.payload.activity.type === 'message'
-                        && shouldSendContext()) {
-
-                        var activity = action.payload.activity;
-
-                        action = Object.assign({}, action, {
-                            payload: Object.assign({}, action.payload, {
-                                activity: Object.assign({}, activity, {
-                                    channelData: Object.assign({}, activity.channelData, {
-                                        context: {
-                                            userLanguage: $dyn.peek(data.UserLanguage),
-                                            userTimeZone: $dyn.peek(data.UserTimeZone),
-                                            callingMethod: $dyn.peek(data.CallingMethod),
-                                            legalEntity: $dyn.peek(data.LegalEntity),
-                                            currentUser: $dyn.peek(data.UserId),
-                                            currentForm: $dyn.peek(data.CurrentFormName),
-                                            currentMenuItem: $dyn.peek(data.CurrentMenuItem),
-                                            formMode: $dyn.peek(data.FormMode),
-                                            currentRecord: {
-                                                tableName: $dyn.peek(data.TableName),
-                                                naturalKey: $dyn.peek(data.NaturalKey),
-                                                naturalValue: $dyn.peek(data.NaturalValue)
-                                            }
-                                        }
-                                    })
-                                })
-                            })
-                        });
+                    if (isTypingIndicator(action)) {
+                        return;
                     }
 
-                    // Capture incoming agent responses — only when X++ initiated the message
-                    if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
-                        var activity = action.payload.activity;
+                    action = enrichOutgoingActivity(action, data);
 
-                        if (activity.type === 'message'
-                            && activity.from.role === 'bot'
-                            && activity.text
-                            && waitingForBotReply
-                            && !activity.channelData?.isToolThought) { // Don't capture tool thoughts as final responses
+                    captureAgentResponse(action, data);
 
-                            waitingForBotReply = false;
-                            $dyn.callFunction(data.RaiseAgentResponse, null, [activity.text]);
-                        }
-                    }
-
-                    // Handle Dynamic Plan events (tool calls from Copilot Studio)
-                    if (action.type === 'DIRECT_LINE/INCOMING_ACTIVITY') {
-                        var activity = action.payload.activity;
-
-                        if (activity && activity.type === 'event') {
-                            // Track tool calls by plan identifier for correlating with thoughts
-                            if (!window._copilotToolCalls) {
-                                window._copilotToolCalls = {};
-                            }
-
-                            if (activity.name === 'DynamicPlanReceived' && activity.value) {
-                                var planValue = activity.value;
-                                var planId = planValue.planIdentifier;
-
-                                // Store tool definitions for this plan
-                                window._copilotToolCalls[planId] = {
-                                    tools: (planValue.toolDefinitions || []).map(function (tool, index) {
-                                        return {
-                                            id: index.toString(),
-                                            llmIdentifierPrefix: tool.llmIdentifierPrefix || tool.displayName,
-                                            description: tool.description || '',
-                                            identifier: tool.identifier,
-                                            thought: 'Waiting for agent reasoning...'
-                                        };
-                                    }),
-                                    cardSent: false
-                                };
-
-                                console.log('COTXCopilotHostControl: DynamicPlanReceived', planId);
-                            }
-
-                            if (activity.name === 'DynamicPlanStepTriggered' && activity.value) {
-                                var stepValue = activity.value;
-                                var planId = stepValue.planIdentifier;
-                                var thought = stepValue.thought || '';
-
-                                // Check if tool calls should be shown
-                                var showToolCalls = !!$dyn.peek(data.ShowToolCalls);
-
-                                // Update the matching tool with its thought
-                                if (window._copilotToolCalls[planId]) {
-                                    var planData = window._copilotToolCalls[planId];
-
-                                    // Find matching tool by taskDialogId
-                                    planData.tools.forEach(function (tool) {
-                                        if (stepValue.taskDialogId && stepValue.taskDialogId.indexOf(tool.identifier) !== -1) {
-                                            tool.thought = thought;
-                                        }
-                                    });
-
-                                    // Send the Adaptive Card if not already sent and tool calls are enabled
-                                    if (!planData.cardSent && planData.tools.length > 0 && showToolCalls) {
-                                        planData.cardSent = true;
-
-                                        var adaptiveCard = {
-                                            "$schema": "https://adaptivecards.io/schemas/adaptive-card.json",
-                                            "type": "AdaptiveCard",
-                                            "version": "1.6",
-                                            "body": [
-                                                {
-                                                    "type": "TextBlock",
-                                                    "text": "🔧 Tool Call",
-                                                    "weight": "Bolder",
-                                                    "size": "Small"
-                                                }
-                                            ]
-                                        };
-
-                                        // Build container for each tool
-                                        planData.tools.forEach(function (tool) {
-                                            adaptiveCard.body.push({
-                                                "type": "Container",
-                                                "spacing": "Small",
-                                                "separator": true,
-                                                "items": [
-                                                    {
-                                                        "type": "ColumnSet",
-                                                        "columns": [
-                                                            {
-                                                                "type": "Column",
-                                                                "width": "auto",
-                                                                "items": [
-                                                                    {
-                                                                        "type": "TextBlock",
-                                                                        "text": "⚡",
-                                                                        "size": "Small"
-                                                                    }
-                                                                ]
-                                                            },
-                                                            {
-                                                                "type": "Column",
-                                                                "width": "stretch",
-                                                                "items": [
-                                                                    {
-                                                                        "type": "TextBlock",
-                                                                        "text": tool.llmIdentifierPrefix,
-                                                                        "weight": "Bolder",
-                                                                        "wrap": true,
-                                                                        "size": "Small"
-                                                                    },
-                                                                    {
-                                                                        "type": "TextBlock",
-                                                                        "text": tool.description,
-                                                                        "isSubtle": true,
-                                                                        "spacing": "None",
-                                                                        "wrap": true,
-                                                                        "size": "Small"
-                                                                    }
-                                                                ]
-                                                            }
-                                                        ]
-                                                    },
-                                                    {
-                                                        "type": "ActionSet",
-                                                        "spacing": "Small",
-                                                        "actions": [
-                                                            {
-                                                                "type": "Action.ShowCard",
-                                                                "title": "💭 Show Thoughts",
-                                                                "card": {
-                                                                    "type": "AdaptiveCard",
-                                                                    "body": [
-                                                                        {
-                                                                            "type": "TextBlock",
-                                                                            "text": tool.thought,
-                                                                            "wrap": true,
-                                                                            "size": "Small",
-                                                                            "isSubtle": true
-                                                                        }
-                                                                    ]
-                                                                }
-                                                            }
-                                                        ]
-                                                    }
-                                                ]
-                                            });
-                                        });
-
-                                        // Inject the card as a bot message
-                                        var cardActivity = {
-                                            type: 'message',
-                                            from: { role: 'bot' },
-                                            attachments: [{
-                                                contentType: 'application/vnd.microsoft.card.adaptive',
-                                                content: adaptiveCard
-                                            }],
-                                            channelData: { isToolThought: true }
-                                        };
-
-                                        next({
-                                            type: 'DIRECT_LINE/INCOMING_ACTIVITY',
-                                            payload: { activity: cardActivity }
-                                        });
-                                    }
-                                }
-
-                                console.log('COTXCopilotHostControl: DynamicPlanStepTriggered', stepValue.thought);
-                            }
-
-                            // Don't pass original event activities to WebChat
-                            return;
-                        }
+                    if (handleDynamicPlanEvents(action, data, next)) {
+                        return;
                     }
 
                     return next(action);
@@ -366,6 +648,16 @@
     // Copilot Studio connection via Agent SDK
     // -----------------------------------------------------------------------
 
+    /**
+     * Establishes a Direct Line connection to a Copilot Studio agent using the
+     * Agent SDK.
+     *
+     * @param {string} token         - Power Platform API access token.
+     * @param {string} environmentId - Power Platform environment ID.
+     * @param {string} agentId       - Copilot Studio agent identifier.
+     * @returns {Promise<Object>} A Direct Line connection object compatible
+     *          with WebChat's `directLine` prop.
+     */
     function createCopilotConnection(token, environmentId, agentId) {
         return import(COPILOT_SDK_URL).then(function (sdk) {
             var settings = {
@@ -382,90 +674,211 @@
     }
 
     // -----------------------------------------------------------------------
-    // D365 F&O Extensible Control Registration
+    // Initialisation helpers
     // -----------------------------------------------------------------------
 
-    $dyn.controls.COTXCopilotHostControl = function (data, element) {
-        $dyn.ui.Control.apply(this, arguments);
-        $dyn.ui.applyDefaults(this, data, $dyn.ui.defaults.COTXCopilotHostControl);
-        
-        // Store references for cleanup
-        this._directLine = null;
-        this._element = element;
-    };
-
-    $dyn.controls.COTXCopilotHostControl.prototype = $dyn.ui.extendPrototype($dyn.ui.Control.prototype, {
-        init: function (data, element) {
-            $dyn.ui.Control.prototype.init.apply(this, arguments);
-            
-            var self = this;
-
-            function tryRender(attempt) {
-                var webChatReady = element
+    /**
+     * Returns a Promise that resolves once the required browser globals
+     * (`WebChat`, `msal`) are available, polling via `requestAnimationFrame`.
+     *
+     * Rejects if the globals have not appeared after {@link MAX_RENDER_ATTEMPTS}
+     * animation frames.
+     *
+     * @param {HTMLElement} element - The DOM element that will host WebChat.
+     * @returns {Promise<void>}
+     */
+    function waitForDependencies(element) {
+        return new Promise(function (resolve, reject) {
+            function check(attempt) {
+                var ready = element
                     && window.WebChat
                     && window.WebChat.renderWebChat
                     && window.WebChat.createStore
                     && window.msal;
 
-                if (!webChatReady) {
-                    if (attempt < MAX_RENDER_ATTEMPTS) {
-                        requestAnimationFrame(function () { tryRender(attempt + 1); });
-                    }
+                if (ready) {
+                    resolve();
                     return;
                 }
 
-                var appClientId = $dyn.value(data.AppClientId);
-                var tenantId = $dyn.value(data.TenantId);
-                var environmentId = $dyn.value(data.EnvironmentId);
-                var agentId = $dyn.value(data.AgentIdentifier);
-
-                if (!appClientId || !tenantId || !environmentId || !agentId) {
+                if (attempt >= MAX_RENDER_ATTEMPTS) {
+                    reject(new Error(LOG_PREFIX + '.waitForDependencies: Dependencies did not load within '
+                        + MAX_RENDER_ATTEMPTS + ' frames.'));
                     return;
                 }
 
-                acquireToken(appClientId, tenantId)
-                    .then(function (token) {
-                        return createCopilotConnection(token, environmentId, agentId);
-                    })
-                    .then(function (directLine) {
-                        // Store DirectLine reference for cleanup
-                        self._directLine = directLine;
-                        
-                        var store = createStore(data);
-
-                        window.WebChat.renderWebChat({
-                            directLine: directLine,
-                            styleOptions: STYLE_OPTIONS,
-                            store: store
-                        }, element);
-
-                        // Observe PendingMessage — when X++ sets it, send it through WebChat
-                        $dyn.observe(data.PendingMessage, function (message) {
-                            if (!message) {
-                                return;
-                            }
-
-                            waitingForBotReply = true;
-
-                            store.dispatch({
-                                type: 'WEB_CHAT/SEND_MESSAGE',
-                                payload: { text: message }
-                            });
-
-                            $dyn.callFunction(
-                                $dyn.observable(data.PendingMessage),
-                                null,
-                                ['']
-                            );
-                        });
-
-                    })
-                    .catch(function (e) {
-                        console.error('COTXCopilotHostControl: Error initializing', e);
-                    });
+                requestAnimationFrame(function () { check(attempt + 1); });
             }
 
-            tryRender(0);
+            check(0);
+        });
+    }
+
+    /**
+     * Reads the control parameters from D365 data bindings and validates that
+     * all required values are present.
+     *
+     * @param {Object} data - D365 control data bindings.
+     * @returns {{ appClientId: string, tenantId: string, environmentId: string, agentId: string } | null}
+     *          The parameter set, or `null` if any required value is missing.
+     */
+    function readControlParameters(data) {
+        var params = {
+            appClientId: $dyn.value(data.AppClientId),
+            tenantId: $dyn.value(data.TenantId),
+            environmentId: $dyn.value(data.EnvironmentId),
+            agentId: $dyn.value(data.AgentIdentifier)
+        };
+
+        if (!params.appClientId || !params.tenantId || !params.environmentId || !params.agentId) {
+            console.warn(LOG_PREFIX + '.readControlParameters: One or more required parameters are missing.', params);
+            return null;
+        }
+
+        return params;
+    }
+
+    /**
+     * Wires up the `PendingMessage` observer so that when X++ sets a value,
+     * the message is dispatched through WebChat and the observable is cleared.
+     *
+     * @param {Object} data  - D365 control data bindings.
+     * @param {Object} store - WebChat Redux store.
+     * @returns {void}
+     */
+    function observePendingMessages(data, store) {
+        $dyn.observe(data.PendingMessage, function (message) {
+            if (!message) {
+                return;
+            }
+
+            _state.waitingForBotReply = true;
+
+            store.dispatch({
+                type: ACTION_TYPES.SEND_MESSAGE,
+                payload: { text: message }
+            });
+
+            // Clear the observable so X++ can set the next message
+            $dyn.callFunction(
+                $dyn.observable(data.PendingMessage),
+                null,
+                ['']
+            );
+        });
+    }
+
+    /**
+     * Orchestrates the full initialisation sequence: acquires a token, creates
+     * the Copilot Studio Direct Line connection, renders WebChat into the host
+     * element, and starts observing X++ pending messages.
+     *
+     * @param {HTMLElement} element - The DOM element that will host WebChat.
+     * @param {Object}      data   - D365 control data bindings.
+     * @param {{ appClientId: string, tenantId: string, environmentId: string, agentId: string }} params
+     *        - Validated control parameters.
+     * @param {Object}      self   - The control instance (for storing the Direct Line reference).
+     * @returns {Promise<void>}
+     */
+    function initializeWebChat(element, data, params, self) {
+        return acquireToken(params.appClientId, params.tenantId)
+            .then(function (token) {
+                return createCopilotConnection(token, params.environmentId, params.agentId);
+            })
+            .then(function (directLine) {
+                self._directLine = directLine;
+                self._keepConnectionAlive = !!$dyn.peek(data.KeepConnectionAlive);
+
+                var store = createStore(data);
+
+                window.WebChat.renderWebChat({
+                    directLine: directLine,
+                    styleOptions: STYLE_OPTIONS,
+                    store: store
+                }, element);
+
+                observePendingMessages(data, store);
+
+            });
+    }
+
+    // -----------------------------------------------------------------------
+    // D365 F&O Extensible Control Registration
+    // -----------------------------------------------------------------------
+
+    /**
+     * COTXCopilotHostControl — embeds a Copilot Studio WebChat instance inside
+     * a D365 Finance & Operations form control.
+     *
+     * @constructor
+     * @param {Object}      data    - D365 control data bindings.
+     * @param {HTMLElement}  element - The DOM element assigned to this control.
+     */
+    $dyn.controls.COTXCopilotHostControl = function (data, element) {
+        $dyn.ui.Control.apply(this, arguments);
+        $dyn.ui.applyDefaults(this, data, $dyn.ui.defaults.COTXCopilotHostControl);
+
+        /** @type {Object|null} Direct Line connection reference (for cleanup). */
+        this._directLine = null;
+
+        /** @type {boolean} When true, the Direct Line connection is kept alive on dispose. */
+        this._keepConnectionAlive = false;
+    };
+
+    $dyn.controls.COTXCopilotHostControl.prototype = $dyn.ui.extendPrototype($dyn.ui.Control.prototype, {
+
+        /**
+         * Lifecycle hook called by the D365 control framework after the
+         * control's DOM element is available. Waits for external scripts to
+         * load, validates parameters, and bootstraps the WebChat session.
+         *
+         * @param {Object}      data    - D365 control data bindings.
+         * @param {HTMLElement}  element - The DOM element assigned to this control.
+         * @returns {void}
+         */
+        init: function (data, element) {
+            $dyn.ui.Control.prototype.init.apply(this, arguments);
+
+            var self = this;
+
+            waitForDependencies(element)
+                .then(function () {
+                    var params = readControlParameters(data);
+
+                    if (!params) {
+                        return;
+                    }
+
+                    return initializeWebChat(element, data, params, self);
+                })
+                .catch(function (error) {
+                    console.error(LOG_PREFIX + '.init: Error initializing', error);
+                });
+        },
+
+        /**
+         * Lifecycle hook called by the D365 control framework when the control
+         * is being destroyed (e.g. form close, navigation). Terminates the
+         * Direct Line connection and clears module-scoped state.
+         *
+         * @returns {void}
+         */
+        dispose: function () {
+            if (this._directLine) {
+                if (this._keepConnectionAlive) {
+                    console.log(LOG_PREFIX + '.dispose: KeepConnectionAlive is set — Direct Line connection preserved');
+                } else if (typeof this._directLine.end === 'function') {
+                    this._directLine.end();
+                    this._directLine = null;
+                    console.log(LOG_PREFIX + '.dispose: Direct Line connection ended');
+                }
+            }
+
+            // Reset module state so a fresh control instance starts clean
+            _state.waitingForBotReply = false;
+            _state.toolCalls = {};
+
+            $dyn.ui.Control.prototype.dispose.apply(this, arguments);
         }
     });
 })();

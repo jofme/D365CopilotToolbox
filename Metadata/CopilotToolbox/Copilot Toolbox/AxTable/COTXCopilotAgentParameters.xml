@@ -189,9 +189,6 @@ internal class COTXCopilotAgentParameters extends common
 				<AxTableFieldGroupField>
 					<DataField>SendGlobalContext</DataField>
 				</AxTableFieldGroupField>
-				<AxTableFieldGroupField>
-					<DataField>ShowToolUsage</DataField>
-				</AxTableFieldGroupField>
 			</Fields>
 		</AxTableFieldGroup>
 		<AxTableFieldGroup>
@@ -215,6 +212,21 @@ internal class COTXCopilotAgentParameters extends common
 				</AxTableFieldGroupField>
 				<AxTableFieldGroupField>
 					<DataField>DataverseEnvironment</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
+		</AxTableFieldGroup>
+		<AxTableFieldGroup>
+			<Name>AgentBehaviour</Name>
+			<Label>Agent Behaviour</Label>
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>ShowToolUsage</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>ShowThoughts</DataField>
+				</AxTableFieldGroupField>
+				<AxTableFieldGroupField>
+					<DataField>KeepConnectionAlive</DataField>
 				</AxTableFieldGroupField>
 			</Fields>
 		</AxTableFieldGroup>
@@ -274,6 +286,22 @@ internal class COTXCopilotAgentParameters extends common
 			<Name>ShowToolUsage</Name>
 			<ExtendedDataType>COTXCopilotHostShowToolUsage</ExtendedDataType>
 			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>ShowThoughts</Name>
+			<ExtendedDataType>NoYesId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Show thoughs</Label>
+			<EnumType>NoYes</EnumType>
+		</AxTableField>
+		<AxTableField xmlns=""
+			i:type="AxTableFieldEnum">
+			<Name>KeepConnectionAlive</Name>
+			<ExtendedDataType>NoYesId</ExtendedDataType>
+			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
+			<Label>Keep Connection Alive</Label>
 			<EnumType>NoYes</EnumType>
 		</AxTableField>
 	</Fields>

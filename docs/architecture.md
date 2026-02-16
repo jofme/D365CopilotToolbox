@@ -189,6 +189,7 @@ The ERP context is injected into the `channelData.context` of every outgoing Web
 | **Global singleton for context** | A single `COTXCopilotHostGlobalContext` instance subscribes once to `Info.onActivate`, avoiding redundant subscriptions. |
 | **Application area routing** | Lookup table pattern allows multiple agents, with `Fallback` as a catch-all, extensible via enum extensions. |
 | **Custom form pattern for side panel** | Aside pane forms require the `Custom` pattern and `setDisplayTarget(AsidePane)` before `super()` — this is per Microsoft guidance. |
+| **Keep connection alive option** | When enabled, `dispose()` skips terminating the Direct Line connection. This avoids the latency of re-authenticating and reconnecting when the form is re-opened quickly. The flag is read once after full initialization — it is not re-evaluated at dispose time. |
 
 ## External Dependencies
 
