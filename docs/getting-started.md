@@ -31,7 +31,7 @@ The Copilot Toolbox enables **multi-agent workflows** in D365 Finance & Operatio
 
 ### Deploy via Deployable Package
 
-1. Download the latest release package from the [[Releases](../../releases)](https://github.com/jofme/D365CopilotToolbox/releases) page
+1. Download the latest release package from the [Releases](https://github.com/jofme/D365CopilotToolbox/releases) page
 2. Deploy the package to your D365 environment using LCS or PPAC
 3. After deployment, the models **Copilot Toolbox** and (optionally) **Copilot Toolbox Examples** will be available
 
