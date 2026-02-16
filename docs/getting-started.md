@@ -81,6 +81,9 @@ On the **Available In** tab of the Agent Parameters form:
 4. The Copilot chat panel should appear on the right side
 5. Type a message to verify the connection
 
+> **Tip:** The key-binding for sending messages is `shift-enter`
+
+
 ## Troubleshooting
 
 | Issue | Cause | Solution |
