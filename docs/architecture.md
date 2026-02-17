@@ -1,4 +1,4 @@
-# Architecture
+﻿# Architecture
 
 This document describes the technical architecture of the D365 Copilot Toolbox core solution for integrating Microsoft Copilot Studio agents into D365 Finance & Operations.
 
@@ -198,8 +198,50 @@ The ERP context is injected into the `channelData.context` of every outgoing Web
 
 ## External Dependencies
 
-| Library | Version | CDN | Purpose |
-|---------|---------|-----|---------|
-| MSAL.js | 4.13.1 | unpkg | Browser-side OAuth2 token acquisition |
-| Bot Framework WebChat | 4.18.0 | unpkg | Chat UI rendering |
-| Copilot Studio Client SDK | 1.2.3 | unpkg (ESM) | DirectLine connection to Copilot Studio agents |
+> **Vendor libraries are bundled locally** as AxResources.
+> They are **not** loaded from external CDNs at runtime. Use `Scripts/Update-VendorLibs.ps1`
+> to download or update them. See `Scripts/vendor-libs.json` for the manifest.
+
+### Vendor Libraries
+
+The control depends on three npm packages, downloaded at build/development time and shipped as D365 AxResource items:
+
+| Library | npm Package | AxResource | Purpose |
+|---------|-------------|------------|---------|
+| MSAL Browser | `@azure/msal-browser` | `COTXMsalBrowser_JS` | Browser-side OAuth2/MSAL token acquisition |
+| MSAL Redirect Bridge | `@azure/msal-browser` | `COTXMsalRedirectBridge_JS` | COOP-compatible auth in popups/iframes (MSAL v5) |
+| WebChat | `botframework-webchat` | `COTXWebChat_JS` | Bot Framework WebChat UI rendering |
+| Copilot Studio Client | `@microsoft/agents-copilotstudio-client` | `COTXCopilotStudioClient_MJS` | Copilot Studio DirectLine connection SDK (ESM) |
+
+Additionally, a redirect bridge HTML page is bundled:
+
+| AxResource | File | Purpose |
+|------------|------|---------|
+| `COTXMsalRedirectBridge_HTML` | `COTXMsalRedirectBridge.html` | HTML container for the MSAL v5 redirect bridge |
+
+### Vendor Library Management
+
+Vendor libraries are managed via:
+
+- **`Scripts/vendor-libs.json`** — manifest listing each package, version, source file path, and output file name
+- **`Scripts/Update-VendorLibs.ps1`** — PowerShell script that reads the manifest, downloads packages from npm, and extracts the required files into the AxResource content folders
+
+The script supports three modes:
+
+| Mode | Command | Description |
+|------|---------|-------------|
+| Download | `Update-VendorLibs.ps1` | Downloads missing vendor files (skips existing) |
+| Force download | `Update-VendorLibs.ps1 -Force` | Re-downloads all vendor files |
+| Check for updates | `Update-VendorLibs.ps1 -CheckForUpdates` | Queries npm for newer versions without downloading |
+| Check + bump manifest | `Update-VendorLibs.ps1 -CheckForUpdates -UpdateManifest` | Queries npm and writes new versions into `vendor-libs.json` |
+
+### Automated Vendor Updates (CI)
+
+A GitHub Actions workflow (`.github/workflows/update-vendor-libs.yml`) runs weekly on Mondays at 08:00 UTC. It:
+
+1. Checks the npm registry for newer versions of each vendor library
+2. Updates `Scripts/vendor-libs.json` if newer versions are found
+3. Downloads the updated files
+4. Opens a pull request with the changes for review
+
+The workflow can also be triggered manually via `workflow_dispatch`, with an option to force re-download all libraries.

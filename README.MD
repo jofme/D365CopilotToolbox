@@ -75,9 +75,11 @@ D365CopilotToolbox/
 │   └── CopilotHostExamples/         # VS project for examples model
 ├── Scripts/
 │   ├── RegisterSymbolicLinks.ps1    # Create symlinks for local development
-│   └── UnregisterSymbolicLinks.ps1  # Remove symlinks
+│   ├── UnregisterSymbolicLinks.ps1  # Remove symlinks
+│   ├── Update-VendorLibs.ps1        # Download/update vendor JS libraries
+│   └── vendor-libs.json             # Vendor library manifest (packages, versions)
 ├── Templates/                       # (Reserved for future templates)
-├── .github/                         # CI/CD build workflows (FSC-PS)
+├── .github/                         # CI/CD workflows (build + vendor lib updates)
 └── .FSC-PS/                         # FSC-PS configuration
 ```
 

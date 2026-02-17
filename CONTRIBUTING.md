@@ -32,10 +32,16 @@ Thank you for your interest in contributing! We'd **love** your help making D365
    .\RegisterSymbolicLinks.ps1
    ```
 
-3. Open the solution in Visual Studio:
+3. Download vendor JavaScript libraries (requires Node.js/npm on PATH):
+   ```powershell
+   .\Update-VendorLibs.ps1
+   ```
+   This reads `Scripts/vendor-libs.json` and downloads the required npm packages (MSAL, WebChat, Copilot Studio Client) into the AxResource content folders. Use `-Force` to re-download if files already exist.
+
+4. Open the solution in Visual Studio:
    - `Project\CopilotAgentHost\CopilotAgentHost.sln`
 
-4. Build and synchronize the database
+5. Build and synchronize the database
 
 ## Coding Standards
 
