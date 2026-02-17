@@ -1,0 +1,31 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Authentication Redirect</title>
+</head>
+<body>
+    <!--
+        MSAL v5 redirect bridge page for the Copilot Toolbox.
+
+        All MSAL v5 auth flows (acquireTokenSilent, acquireTokenPopup,
+        loginRedirect) redirect here after authentication. The redirect-bridge
+        script broadcasts the auth response back to the main window via
+        BroadcastChannel and then closes this popup / iframe.
+
+        This page must stay lightweight — no D365 form runtime, no CSS, no
+        heavy scripts. NOTHING!
+
+        Remember to register this URL as a valid redirect URI in the Azure AD
+        app registration, e.g.:
+            https://<env>.operations.dynamics.com/resources/html/COTXMsalRedirectBridge.html
+    -->
+    <script src="../Scripts/COTXMsalRedirectBridge.js"></script>
+    <script>
+        msalRedirectBridge.broadcastResponseToMainFrame()
+            .catch(function (error) {
+                console.error('[COTXMsalRedirectBridge] Error broadcasting auth response:', error);
+            });
+    </script>
+</body>
+</html>

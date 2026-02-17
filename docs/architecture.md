@@ -1,4 +1,4 @@
-# Architecture
+﻿# Architecture
 
 This document describes the technical architecture of the D365 Copilot Toolbox core solution for integrating Microsoft Copilot Studio agents into D365 Finance & Operations.
 
@@ -198,8 +198,6 @@ The ERP context is injected into the `channelData.context` of every outgoing Web
 
 ## External Dependencies
 
-| Library | Version | CDN | Purpose |
-|---------|---------|-----|---------|
-| MSAL.js | 4.13.1 | unpkg | Browser-side OAuth2 token acquisition |
-| Bot Framework WebChat | 4.18.0 | unpkg | Chat UI rendering |
-| Copilot Studio Client SDK | 1.2.3 | unpkg (ESM) | DirectLine connection to Copilot Studio agents |
+> **Vendor libraries are bundled locally** as AxResources
+> They are **not** loaded from external CDNs at runtime. Use `Scripts/Update-VendorLibs.ps1`
+> to download or update them. See `Scripts/vendor-libs.json` for the manifest.

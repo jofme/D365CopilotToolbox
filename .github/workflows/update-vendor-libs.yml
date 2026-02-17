@@ -1,0 +1,90 @@
+name: Update Vendor Libraries
+
+on:
+  schedule:
+    # Run weekly on Mondays at 08:00 UTC
+    - cron: '0 8 * * 1'
+  workflow_dispatch:
+    inputs:
+      force_download:
+        description: 'Force re-download of all vendor libraries'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+  pull-requests: write
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  check-and-update:
+    runs-on: ubuntu-latest
+    name: Check for vendor library updates
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check for updates and bump manifest
+        id: check
+        run: |
+          $result = & ./Scripts/Update-VendorLibs.ps1 -CheckForUpdates -UpdateManifest 2>&1
+          $result | ForEach-Object { Write-Host $_ }
+          if ($LASTEXITCODE -eq 1) {
+            echo "updates_available=true" >> $env:GITHUB_OUTPUT
+          } else {
+            echo "updates_available=false" >> $env:GITHUB_OUTPUT
+          }
+
+      - name: Download vendor libraries
+        if: steps.check.outputs.updates_available == 'true' || inputs.force_download == 'true'
+        run: |
+          & ./Scripts/Update-VendorLibs.ps1 -Force
+
+      - name: Check for file changes
+        id: changes
+        run: |
+          $diff = git diff --name-only
+          $untracked = git ls-files --others --exclude-standard
+          $allChanges = @($diff) + @($untracked) | Where-Object { $_ }
+          if ($allChanges.Count -gt 0) {
+            echo "has_changes=true" >> $env:GITHUB_OUTPUT
+            Write-Host "Changed files:"
+            $allChanges | ForEach-Object { Write-Host "  $_" }
+          } else {
+            echo "has_changes=false" >> $env:GITHUB_OUTPUT
+            Write-Host "No file changes detected."
+          }
+
+      - name: Create Pull Request
+        if: steps.changes.outputs.has_changes == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: 'chore: update vendor JavaScript libraries'
+          title: 'chore: Update vendor JavaScript libraries'
+          body: |
+            Automated update of vendor JavaScript libraries.
+
+            This PR was created by the **Update Vendor Libraries** workflow.
+
+            ## Changes
+            One or more vendor libraries have been updated to newer versions.
+            Please review the changes and verify the control still works correctly.
+
+            ## Checklist
+            - [ ] Verify vendor files are updated correctly
+            - [ ] Test the Copilot host control in a D365 environment
+            - [ ] Update version numbers in `Scripts/vendor-libs.json` if upgrading
+          branch: chore/update-vendor-libs
+          labels: dependencies, automated
+          delete-branch: true

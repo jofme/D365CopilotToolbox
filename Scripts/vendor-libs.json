@@ -1,0 +1,38 @@
+﻿{
+    "description":  "Vendor JavaScript libraries bundled as D365 AxResource items. Used by Scripts/Update-VendorLibs.ps1 to download and verify files.",
+    "outputDir":  "../Metadata/CopilotToolbox/Copilot Toolbox/AxResource/ResourceContent/Scripts",
+    "libraries":  [
+                      {
+                          "name":  "msal-browser",
+                          "package":  "@azure/msal-browser",
+                          "version":  "5.2.0",
+                          "sourceFile":  "lib/msal-browser.js",
+                          "outputFile":  "COTXMsalBrowser.js",
+                          "purpose":  "Browser-side OAuth2/MSAL token acquisition"
+                      },
+                      {
+                          "name":  "msal-redirect-bridge",
+                          "package":  "@azure/msal-browser",
+                          "version":  "5.2.0",
+                          "sourceFile":  "lib/redirect-bridge/msal-redirect-bridge.js",
+                          "outputFile":  "COTXMsalRedirectBridge.js",
+                          "purpose":  "MSAL v5 redirect bridge for COOP-compatible auth in popups/iframes"
+                      },
+                      {
+                          "name":  "webchat",
+                          "package":  "botframework-webchat",
+                          "version":  "4.18.0",
+                          "sourceFile":  "dist/webchat.js",
+                          "outputFile":  "COTXWebChat.js",
+                          "purpose":  "Bot Framework WebChat UI rendering"
+                      },
+                      {
+                          "name":  "copilotstudio-client",
+                          "package":  "@microsoft/agents-copilotstudio-client",
+                          "version":  "1.2.3",
+                          "sourceFile":  "dist/src/browser.mjs",
+                          "outputFile":  "../Data/COTXCopilotStudioClient.mjs",
+                          "purpose":  "Copilot Studio DirectLine connection SDK (ESM)"
+                      }
+                  ]
+}

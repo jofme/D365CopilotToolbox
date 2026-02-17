@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AxResource xmlns:i="http://www.w3.org/2001/XMLSchema-instance">
+	<Name>COTXCopilotStudioClient_MJS</Name>
+	<FileName>COTXCopilotStudioClient.mjs</FileName>
+	<RelativeUriInModelStore>CopilotToolbox\Copilot Toolbox\AxResource\ResourceContent\Data\COTXCopilotStudioClient.mjs</RelativeUriInModelStore>
+	<TypeOfResource>Data</TypeOfResource>
+</AxResource>

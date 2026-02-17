@@ -68,6 +68,11 @@
       <Name>COTXCopilotHostGlobalContext</Name>
       <Link>Classes\COTXCopilotHostGlobalContext</Link>
     </Content>
+    <Content Include="AxClass\RunnableClass1">
+      <SubType>Content</SubType>
+      <Name>RunnableClass1</Name>
+      <Link>Classes\RunnableClass1</Link>
+    </Content>
     <Content Include="AxEdt\COTXCopilotAgentDataverseEnvironment">
       <SubType>Content</SubType>
       <Name>COTXCopilotAgentDataverseEnvironment</Name>
@@ -168,6 +173,31 @@
       <Name>COTXCopilotHostControl_JS</Name>
       <Link>Resources\COTXCopilotHostControl_JS</Link>
     </Content>
+    <Content Include="AxResource\COTXCopilotStudioClient_MJS">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotStudioClient_MJS</Name>
+      <Link>Resources\COTXCopilotStudioClient_MJS</Link>
+    </Content>
+    <Content Include="AxResource\COTXMsalBrowser_JS">
+      <SubType>Content</SubType>
+      <Name>COTXMsalBrowser_JS</Name>
+      <Link>Resources\COTXMsalBrowser_JS</Link>
+    </Content>
+    <Content Include="AxResource\COTXMsalRedirectBridge_HTML">
+      <SubType>Content</SubType>
+      <Name>COTXMsalRedirectBridge_HTML</Name>
+      <Link>Resources\COTXMsalRedirectBridge_HTML</Link>
+    </Content>
+    <Content Include="AxResource\COTXMsalRedirectBridge_JS">
+      <SubType>Content</SubType>
+      <Name>COTXMsalRedirectBridge_JS</Name>
+      <Link>Resources\COTXMsalRedirectBridge_JS</Link>
+    </Content>
+    <Content Include="AxResource\COTXWebChat_JS">
+      <SubType>Content</SubType>
+      <Name>COTXWebChat_JS</Name>
+      <Link>Resources\COTXWebChat_JS</Link>
+    </Content>
     <Content Include="AxSecurityDuty\COTXCopilotAdminDuty">
       <SubType>Content</SubType>
       <Name>COTXCopilotAdminDuty</Name>
@@ -213,6 +243,11 @@
       <Name>COTXCopilotAgentParameters</Name>
       <Link>Tables\COTXCopilotAgentParameters</Link>
     </Content>
+    <Content Include="COTXCopilotStudioClient.mjs">
+      <SubType>Content</SubType>
+      <Name>COTXCopilotStudioClient.mjs</Name>
+      <DependentUpon>AxResource\COTXCopilotStudioClient_MJS</DependentUpon>
+    </Content>
     <Content Include="CopilotToolbox.en-US.label.txt">
       <SubType>Content</SubType>
       <Name>CopilotToolbox.en-US.label.txt</Name>
@@ -232,6 +267,26 @@
       <SubType>Content</SubType>
       <Name>COTXCopilotHostControl.js</Name>
       <DependentUpon>AxResource\COTXCopilotHostControl_JS</DependentUpon>
+    </Content>
+    <Content Include="COTXMsalRedirectBridge.html">
+      <SubType>Content</SubType>
+      <Name>COTXMsalRedirectBridge.html</Name>
+      <DependentUpon>AxResource\COTXMsalRedirectBridge_HTML</DependentUpon>
+    </Content>
+    <Content Include="COTXMsalBrowser.js">
+      <SubType>Content</SubType>
+      <Name>COTXMsalBrowser.js</Name>
+      <DependentUpon>AxResource\COTXMsalBrowser_JS</DependentUpon>
+    </Content>
+    <Content Include="COTXMsalRedirectBridge.js">
+      <SubType>Content</SubType>
+      <Name>COTXMsalRedirectBridge.js</Name>
+      <DependentUpon>AxResource\COTXMsalRedirectBridge_JS</DependentUpon>
+    </Content>
+    <Content Include="COTXWebChat.js">
+      <SubType>Content</SubType>
+      <Name>COTXWebChat.js</Name>
+      <DependentUpon>AxResource\COTXWebChat_JS</DependentUpon>
     </Content>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.Common.targets" />

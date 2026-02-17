@@ -5,8 +5,8 @@
     // Constants
     // -----------------------------------------------------------------------
 
-    /** @type {string} CDN URL for the Copilot Studio Agent SDK browser bundle. */
-    var COPILOT_SDK_URL = 'https://unpkg.com/@microsoft/agents-copilotstudio-client@1.2.3/dist/src/browser.mjs';
+    /** @type {string} Relative path to the Copilot Studio Agent SDK browser bundle (vendored). */
+    var COPILOT_SDK_URL = '../Data/COTXCopilotStudioClient.mjs';
 
     /** @type {number} Maximum number of animation-frame ticks to wait for dependencies. */
     var MAX_RENDER_ATTEMPTS = 60;
@@ -151,10 +151,22 @@
         var cacheKey = appClientId + '|' + tenantId;
 
         if (!_msalCache[cacheKey]) {
+            // Resolve the lightweight redirect bridge page served alongside
+            // this control.  MSAL v5 redirects popup / silent-iframe flows
+            // here so the page can broadcast the auth response back to the
+            // main window via BroadcastChannel (required for COOP support).
+            // This URL must also be registered as a redirect URI in the
+            // Azure AD app registration.
+            var redirectBridgeUrl = new URL(
+                'COTXMsalRedirectBridge.html',
+                window.location.href
+            ).href;
+
             var msalConfig = {
                 auth: {
                     clientId: appClientId,
-                    authority: 'https://login.microsoftonline.com/' + tenantId
+                    authority: 'https://login.microsoftonline.com/' + tenantId,
+                    redirectUri: redirectBridgeUrl
                 },
                 cache: {
                     cacheLocation: 'sessionStorage'
@@ -165,7 +177,12 @@
 
             _msalCache[cacheKey] = {
                 instance: instance,
-                initPromise: instance.initialize()
+                initPromise: instance.initialize().then(function () {
+                    // Drain any stale redirect state without navigating away
+                    return instance.handleRedirectPromise({
+                        navigateToLoginRequestUrl: false
+                    });
+                })
             };
         }
 
@@ -173,8 +190,7 @@
         var msalInstance = cached.instance;
 
         var loginRequest = {
-            scopes: ['https://api.powerplatform.com/.default'],
-            redirectUri: window.location.origin
+            scopes: ['https://api.powerplatform.com/.default']
         };
 
         return cached.initPromise.then(function () {
@@ -183,8 +199,7 @@
             if (accounts.length > 0) {
                 return msalInstance.acquireTokenSilent({
                     scopes: loginRequest.scopes,
-                    account: accounts[0],
-                    redirectUri: loginRequest.redirectUri
+                    account: accounts[0]
                 }).then(function (response) {
                     return response.accessToken;
                 }).catch(function (silentError) {
