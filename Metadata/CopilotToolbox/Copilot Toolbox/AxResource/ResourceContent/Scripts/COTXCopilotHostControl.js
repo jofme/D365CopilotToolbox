@@ -120,6 +120,15 @@
         toolCalls: {}
     };
 
+    /**
+     * Module-scoped cache for MSAL PublicClientApplication instances, keyed by
+     * "clientId|tenantId". Prevents creating duplicate MSAL instances across
+     * restarts or multiple control instances on the same page.
+     *
+     * @type {Object.<string, {instance: Object, initPromise: Promise}>}
+     */
+    var _msalCache = {};
+
     // -----------------------------------------------------------------------
     // Token acquisition via MSAL.js
     // -----------------------------------------------------------------------
@@ -130,29 +139,45 @@
      * Tries silent acquisition first (leveraging the D365 Entra ID session),
      * then falls back to a popup if interaction is required.
      *
+     * The underlying MSAL PublicClientApplication is created once per
+     * clientId + tenantId pair and reused across subsequent calls, avoiding the
+     * memory overhead of redundant instances.
+     *
      * @param {string} appClientId - App registration client ID (SPA / public client).
      * @param {string} tenantId    - Entra ID tenant ID.
      * @returns {Promise<string>}    The access token string.
      */
     function acquireToken(appClientId, tenantId) {
-        var msalConfig = {
-            auth: {
-                clientId: appClientId,
-                authority: 'https://login.microsoftonline.com/' + tenantId
-            },
-            cache: {
-                cacheLocation: 'sessionStorage'
-            }
-        };
+        var cacheKey = appClientId + '|' + tenantId;
 
-        var msalInstance = new msal.PublicClientApplication(msalConfig);
+        if (!_msalCache[cacheKey]) {
+            var msalConfig = {
+                auth: {
+                    clientId: appClientId,
+                    authority: 'https://login.microsoftonline.com/' + tenantId
+                },
+                cache: {
+                    cacheLocation: 'sessionStorage'
+                }
+            };
+
+            var instance = new msal.PublicClientApplication(msalConfig);
+
+            _msalCache[cacheKey] = {
+                instance: instance,
+                initPromise: instance.initialize()
+            };
+        }
+
+        var cached = _msalCache[cacheKey];
+        var msalInstance = cached.instance;
 
         var loginRequest = {
             scopes: ['https://api.powerplatform.com/.default'],
             redirectUri: window.location.origin
         };
 
-        return msalInstance.initialize().then(function () {
+        return cached.initPromise.then(function () {
             var accounts = msalInstance.getAllAccounts();
 
             if (accounts.length > 0) {
@@ -674,6 +699,142 @@
     }
 
     // -----------------------------------------------------------------------
+    // Subscription & layout helpers
+    // -----------------------------------------------------------------------
+
+    /**
+     * Safely disposes a `$dyn.observe` subscription if it exists.
+     *
+     * @param {Object|null} subscription - The subscription returned by `$dyn.observe`.
+     * @returns {null} Always returns null for assignment convenience.
+     */
+    function disposeSubscription(subscription) {
+        if (subscription && typeof subscription.dispose === 'function') {
+            subscription.dispose();
+        }
+
+        return null;
+    }
+
+    /**
+     * Creates the chat header bar (with a restart button) and an inner
+     * container for WebChat, inserting both into the control's root element.
+     *
+     * Called once during `init`; subsequent calls return the existing inner
+     * container without modification.
+     *
+     * @param {HTMLElement} element - The control's root DOM element.
+     * @param {Object}      self   - The control instance.
+     * @returns {HTMLElement} The inner container element where WebChat should render.
+     */
+    function ensureChatLayout(element, self) {
+        if (self._chatContainer) {
+            return self._chatContainer;
+        }
+
+        // Header bar
+        var header = document.createElement('div');
+        header.className = 'cotx-chat-header';
+
+        var restartBtn = document.createElement('button');
+        restartBtn.className = 'cotx-chat-restart-btn';
+        restartBtn.type = 'button';
+        restartBtn.title = 'Start a new conversation';
+        restartBtn.textContent = '\u21BB New chat';
+
+        header.appendChild(restartBtn);
+
+        // Inner container for WebChat
+        var container = document.createElement('div');
+        container.className = 'cotx-chat-container';
+
+        element.appendChild(header);
+        element.appendChild(container);
+
+        self._chatContainer = container;
+        self._restartButton = restartBtn;
+
+        return container;
+    }
+
+    // -----------------------------------------------------------------------
+    // Chat restart
+    // -----------------------------------------------------------------------
+
+    /**
+     * Tears down the current WebChat session and bootstraps a fresh one.
+     *
+     * Cleanup steps:
+     *  1. Disposes the `$dyn.observe` subscription on PendingMessage.
+     *  2. Ends the Direct Line connection (frees server-side resources).
+     *  3. Unmounts the React component tree via `ReactDOM.unmountComponentAtNode`
+     *     so that all internal subscriptions, timers, and closures held by
+     *     WebChat and its Redux store are properly released.
+     *  4. Resets module-scoped mutable state.
+     *
+     * A new token, connection, store, and React tree are then created via
+     * {@link initializeWebChat}.
+     *
+     * @param {HTMLElement} chatContainer - The inner element hosting WebChat.
+     * @param {Object}      data          - D365 control data bindings.
+     * @param {Object}      self          - The control instance.
+     * @returns {Promise<void>}
+     */
+    function restartChat(chatContainer, data, self) {
+        // Double-click protection
+        if (self._restartButton) {
+            self._restartButton.disabled = true;
+        }
+
+        // 1. Dispose $dyn.observe subscription
+        self._pendingMessageSubscription = disposeSubscription(self._pendingMessageSubscription);
+
+        // 2. End the Direct Line connection
+        if (self._directLine && typeof self._directLine.end === 'function') {
+            self._directLine.end();
+            self._directLine = null;
+        }
+
+        // 3. Properly unmount the React component tree so WebChat releases
+        //    all internal subscriptions, timers, and Redux store closures.
+        //    ReactDOM is exposed globally by the WebChat CDN full bundle.
+        if (window.ReactDOM && window.ReactDOM.unmountComponentAtNode) {
+            window.ReactDOM.unmountComponentAtNode(chatContainer);
+        }
+
+        // 4. Reset module-scoped state
+        _state.waitingForBotReply = false;
+        _state.toolCalls = {};
+
+        // 5. Re-initialise
+        var params = readControlParameters(data);
+
+        if (!params) {
+            if (self._restartButton) {
+                self._restartButton.disabled = false;
+            }
+
+            return Promise.reject(new Error(LOG_PREFIX + '.restartChat: Missing control parameters'));
+        }
+
+        return initializeWebChat(chatContainer, data, params, self)
+            .then(function () {
+                if (self._restartButton) {
+                    self._restartButton.disabled = false;
+                }
+
+                console.log(LOG_PREFIX + '.restartChat: Chat restarted successfully');
+            })
+            .catch(function (error) {
+                if (self._restartButton) {
+                    self._restartButton.disabled = false;
+                }
+
+                console.error(LOG_PREFIX + '.restartChat: Error restarting chat', error);
+            });
+    }
+
+    // -----------------------------------------------------------------------
     // Initialisation helpers
     // -----------------------------------------------------------------------
 
@@ -724,10 +885,10 @@
      */
     function readControlParameters(data) {
         var params = {
-            appClientId: $dyn.value(data.AppClientId),
-            tenantId: $dyn.value(data.TenantId),
-            environmentId: $dyn.value(data.EnvironmentId),
-            agentId: $dyn.value(data.AgentIdentifier)
+            appClientId: $dyn.peek(data.AppClientId),
+            tenantId: $dyn.peek(data.TenantId),
+            environmentId: $dyn.peek(data.EnvironmentId),
+            agentId: $dyn.peek(data.AgentIdentifier)
         };
 
         if (!params.appClientId || !params.tenantId || !params.environmentId || !params.agentId) {
@@ -744,10 +905,11 @@
      *
      * @param {Object} data  - D365 control data bindings.
      * @param {Object} store - WebChat Redux store.
-     * @returns {void}
+     * @returns {Object} The `$dyn.observe` subscription (call `.dispose()` to
+     *          unsubscribe).
      */
     function observePendingMessages(data, store) {
-        $dyn.observe(data.PendingMessage, function (message) {
+        return $dyn.observe(data.PendingMessage, function (message) {
             if (!message) {
                 return;
             }
@@ -773,6 +935,10 @@
      * the Copilot Studio Direct Line connection, renders WebChat into the host
      * element, and starts observing X++ pending messages.
      *
+     * Uses an incrementing `_initId` on the control instance to detect stale
+     * initialisations — if a restart is triggered while a previous init is
+     * in-flight, the earlier init's `.then` callbacks silently bail out.
+     *
      * @param {HTMLElement} element - The DOM element that will host WebChat.
      * @param {Object}      data   - D365 control data bindings.
      * @param {{ appClientId: string, tenantId: string, environmentId: string, agentId: string }} params
@@ -781,11 +947,17 @@
      * @returns {Promise<void>}
      */
     function initializeWebChat(element, data, params, self) {
+        var myInitId = ++self._initId;
+
         return acquireToken(params.appClientId, params.tenantId)
             .then(function (token) {
+                if (self._initId !== myInitId) { return; }
+
                 return createCopilotConnection(token, params.environmentId, params.agentId);
             })
             .then(function (directLine) {
+                if (!directLine || self._initId !== myInitId) { return; }
+
                 self._directLine = directLine;
                 self._keepConnectionAlive = !!$dyn.peek(data.KeepConnectionAlive);
 
@@ -797,8 +969,7 @@
                     store: store
                 }, element);
 
-                observePendingMessages(data, store);
-
+                self._pendingMessageSubscription = observePendingMessages(data, store);
             });
     }
 
@@ -823,6 +994,18 @@
 
         /** @type {boolean} When true, the Direct Line connection is kept alive on dispose. */
         this._keepConnectionAlive = false;
+
+        /** @type {Object|null} Subscription returned by `$dyn.observe` on PendingMessage. */
+        this._pendingMessageSubscription = null;
+
+        /** @type {HTMLElement|null} Inner container element where WebChat renders. */
+        this._chatContainer = null;
+
+        /** @type {HTMLElement|null} The restart button element. */
+        this._restartButton = null;
+
+        /** @type {number} Monotonically increasing initialisation counter for stale-init detection. */
+        this._initId = 0;
     };
 
     $dyn.controls.COTXCopilotHostControl.prototype = $dyn.ui.extendPrototype($dyn.ui.Control.prototype, {
@@ -849,7 +1032,21 @@
                         return;
                     }
 
-                    return initializeWebChat(element, data, params, self);
+                    var chatContainer = ensureChatLayout(element, self);
+
+                    // Prevent D365 form framework from capturing Enter key inside WebChat
+                    chatContainer.addEventListener('keydown', function (event) {
+                        if (event.key === 'Enter' && !event.shiftKey) {
+                            event.stopPropagation();
+                        }
+                    });
+
+                    // Wire up the restart button
+                    self._restartButton.addEventListener('click', function () {
+                        restartChat(chatContainer, data, self);
+                    });
+
+                    return initializeWebChat(chatContainer, data, params, self);
                 })
                 .catch(function (error) {
                     console.error(LOG_PREFIX + '.init: Error initializing', error);
@@ -858,12 +1055,30 @@
 
         /**
          * Lifecycle hook called by the D365 control framework when the control
-         * is being destroyed (e.g. form close, navigation). Terminates the
-         * Direct Line connection and clears module-scoped state.
+         * is being destroyed (e.g. form close, navigation). Properly tears
+         * down all resources: observer subscriptions, the React component tree,
+         * the Direct Line connection, and module-scoped state.
          *
          * @returns {void}
          */
         dispose: function () {
+            // Dispose the $dyn.observe subscription
+            this._pendingMessageSubscription = disposeSubscription(this._pendingMessageSubscription);
+
+            // Invalidate any in-flight initialisation so stale callbacks bail out
+            this._initId++;
+
+            // Unmount the React tree so WebChat releases internal subscriptions,
+            // timers, and Redux store closures
+            if (this._chatContainer) {
+                if (window.ReactDOM && window.ReactDOM.unmountComponentAtNode) {
+                    window.ReactDOM.unmountComponentAtNode(this._chatContainer);
+                }
+
+                this._chatContainer = null;
+            }
+
+            // End the Direct Line connection
             if (this._directLine) {
                 if (this._keepConnectionAlive) {
                     console.log(LOG_PREFIX + '.dispose: KeepConnectionAlive is set — Direct Line connection preserved');

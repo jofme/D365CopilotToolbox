@@ -47,8 +47,8 @@ graph TB
 | File | Responsibility |
 |------|---------------|
 | `COTXCopilotHostControl.html` | Loads MSAL.js 4.13.1, WebChat 4.18.0, and the main JS file. Contains the root `<div>` for the control. |
-| `COTXCopilotHostControl.js` | Orchestrates the entire browser-side flow: MSAL token acquisition, Copilot Studio SDK connection, WebChat rendering, context injection middleware, tool call card rendering, and D365 extensible control registration. |
-| `COTXCopilotHostControl.css` | Styles the chat interface (bubble appearance, tables, lists, scrollbars, headings) to match a modern Copilot aesthetic. |
+| `COTXCopilotHostControl.js` | Orchestrates the entire browser-side flow: MSAL token acquisition (with per-client instance caching), Copilot Studio SDK connection, chat layout creation (header bar + inner container), WebChat rendering, chat restart lifecycle, context injection middleware, tool call card rendering, and D365 extensible control registration. |
+| `COTXCopilotHostControl.css` | Styles the chat interface — header bar with restart button, chat container layout, bubble appearance, tables, lists, scrollbars, and headings — to match a modern Copilot aesthetic. |
 
 ### Data Model
 
@@ -80,12 +80,16 @@ flowchart TD
 ```mermaid
 flowchart TD
     A["JS init()"] --> B["tryRender() — retries up to 60 frames"]
-    B --> C["acquireToken(appClientId, tenantId)"]
-    B --> D["createCopilotConnection(token, envId, agentId)"]
-    B --> E["WebChat.renderWebChat(directLine, store, element)"]
-    C --> C1["Try silent — session cache → access token"]
-    C --> C2["Fallback: popup → access token"]
+    B --> L["ensureChatLayout(element) — header bar + inner container"]
+    L --> LK["Attach Enter key listener (stopPropagation)"]
+    L --> LR["Wire restart button → restartChat()"]
+    L --> C["acquireToken(appClientId, tenantId)"]
+    C --> C1["MSAL instance cached per clientId|tenantId"]
+    C1 --> C2["Try silent — session cache → access token"]
+    C1 --> C3["Fallback: popup → access token"]
+    C --> D["createCopilotConnection(token, envId, agentId)"]
     D --> D1["CopilotStudioWebChat.createConnection() → DirectLine"]
+    D --> E["WebChat.renderWebChat(directLine, store, chatContainer)"]
     E --> E1["Store middleware intercepts"]
     E1 --> E2["Outgoing messages: injects ERP context"]
     E1 --> E3["Incoming messages: captures agent responses"]
@@ -190,6 +194,7 @@ The ERP context is injected into the `channelData.context` of every outgoing Web
 | **Application area routing** | Lookup table pattern allows multiple agents, with `Fallback` as a catch-all, extensible via enum extensions. |
 | **Custom form pattern for side panel** | Aside pane forms require the `Custom` pattern and `setDisplayTarget(AsidePane)` before `super()` — this is per Microsoft guidance. |
 | **Keep connection alive option** | When enabled, `dispose()` skips terminating the Direct Line connection. This avoids the latency of re-authenticating and reconnecting when the form is re-opened quickly. The flag is read once after full initialization — it is not re-evaluated at dispose time. |
+| **MSAL instance caching** | A module-scoped `_msalCache` object stores `PublicClientApplication` instances keyed by `clientId|tenantId`. This prevents creating duplicate MSAL instances across chat restarts or multiple control instances on the same page, reducing memory overhead and avoiding redundant `initialize()` calls. |
 
 ## External Dependencies
 

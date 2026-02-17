@@ -84,11 +84,14 @@ The SPA app registration used by the Copilot Toolbox:
 ### Token Flow
 
 1. User opens the Copilot control in D365
-2. MSAL.js checks for cached tokens in `sessionStorage`
-3. If available, acquires a token **silently** (no user interaction)
-4. If not, shows a **popup** for interactive sign-in
-5. The token is used to connect to Copilot Studio via the Agent SDK
-6. Tokens are short-lived and scoped to the Power Platform API (`CopilotStudio.Copilots.Invoke`)
+2. The MSAL `PublicClientApplication` is created (or retrieved from a module-scoped cache keyed by `clientId|tenantId` — only the first call per pair creates a new instance)
+3. MSAL.js checks for cached tokens in `sessionStorage`
+4. If available, acquires a token **silently** (no user interaction)
+5. If not, shows a **popup** for interactive sign-in
+6. The token is used to connect to Copilot Studio via the Agent SDK
+7. Tokens are short-lived and scoped to the Power Platform API (`CopilotStudio.Copilots.Invoke`)
+
+> **Note:** The MSAL instance cache persists for the lifetime of the browser page. When a user restarts the chat conversation, the existing MSAL instance is reused — no re-initialisation or duplicate instances are created.
 
 ### Security Boundaries
 
