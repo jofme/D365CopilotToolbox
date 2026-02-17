@@ -6,7 +6,7 @@
     // -----------------------------------------------------------------------
 
     /** @type {string} Relative path to the Copilot Studio Agent SDK browser bundle (vendored). */
-    var COPILOT_SDK_URL = '../Data/COTXCopilotStudioClient.mjs';
+    var COPILOT_SDK_URL = '../Resources/Scripts/COTXCopilotStudioClient.js';
 
     /** @type {number} Maximum number of animation-frame ticks to wait for dependencies. */
     var MAX_RENDER_ATTEMPTS = 60;
@@ -158,7 +158,7 @@
             // This URL must also be registered as a redirect URI in the
             // Azure AD app registration.
             var redirectBridgeUrl = new URL(
-                'COTXMsalRedirectBridge.html',
+                'resources/html/COTXMsalRedirectBridge.html',
                 window.location.href
             ).href;
 
@@ -699,7 +699,9 @@
      *          with WebChat's `directLine` prop.
      */
     function createCopilotConnection(token, environmentId, agentId) {
-        return import(COPILOT_SDK_URL).then(function (sdk) {
+        var sdkUrl = new URL(COPILOT_SDK_URL, window.location.href).href;
+
+        return import(sdkUrl).then(function (sdk) {
             var settings = {
                 environmentId: environmentId,
                 agentIdentifier: agentId
