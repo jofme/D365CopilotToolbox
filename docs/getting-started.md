@@ -83,7 +83,9 @@ On the **Available In** tab of the Agent Parameters form:
 4. The Copilot chat panel should appear on the right side
 5. Type a message to verify the connection
 
-> **Tip:** The key-binding for sending messages is `shift-enter`
+> **Tip:** Press **Enter** to send a message. Use **Shift+Enter** to insert a newline.
+>
+> Use the **↻ New chat** button in the chat header to start a fresh conversation at any time.
 
 
 ## Troubleshooting
@@ -95,6 +97,7 @@ On the **Available In** tab of the Agent Parameters form:
 | "AADSTS..." error in popup | App registration misconfigured | Check redirect URI matches your D365 origin, verify API permissions |
 | No context sent to agent | `Send Global FSCM Context` is disabled | Enable it in Agent Parameters |
 | Control doesn't appear on form | Missing security role | Assign `Copilot User` or `Copilot Administrator` role |
+| Conversation seems stuck or stale | WebChat session issue | Click the **↻ New chat** button in the chat header to start a fresh session |
 
 ## Next Steps
 

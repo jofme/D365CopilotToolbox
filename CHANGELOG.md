@@ -4,7 +4,20 @@ All notable changes to the D365 Copilot Toolbox are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [1.0.0] - 2026-02-15
+## [Unreleased]
+
+### Added
+- **New chat button** — a restart button ("↻ New chat") in the chat header bar lets users start a fresh conversation without reloading the form
+- **MSAL instance caching** — `PublicClientApplication` instances are now cached per `clientId|tenantId` pair and reused across chat restarts, avoiding the memory overhead of redundant MSAL instances
+- **Chat header bar** — new `ensureChatLayout()` function creates a persistent header bar and inner container, separating chrome from the WebChat React tree
+- **Stale init detection** — a monotonically increasing `_initId` counter prevents race conditions when a restart is triggered while a previous initialisation is still in-flight
+
+### Fixed
+- **Enter key now sends messages** — the chat container intercepts the Enter keydown event (`stopPropagation`) so the D365 form framework no longer captures it; Shift+Enter still inserts a newline
+- **Memory leaks on dispose / restart** — the React component tree is now explicitly unmounted via `ReactDOM.unmountComponentAtNode`, `$dyn.observe` subscriptions are properly disposed, and in-flight initialisations are invalidated
+- **Observable side-effects in readControlParameters** — switched from `$dyn.value` to `$dyn.peek` to avoid creating unintended reactive subscriptions when reading control parameters
+
+## [1.26.2.0] - 2026-02-15
 
 Initial release of the D365 Copilot Toolbox, establishing the foundation for multi-agent workflows in D365 Finance & Operations. This release focuses on Microsoft Copilot Studio agent integration.
 
