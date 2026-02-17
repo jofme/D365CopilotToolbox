@@ -68,11 +68,6 @@
       <Name>COTXCopilotHostGlobalContext</Name>
       <Link>Classes\COTXCopilotHostGlobalContext</Link>
     </Content>
-    <Content Include="AxClass\RunnableClass1">
-      <SubType>Content</SubType>
-      <Name>RunnableClass1</Name>
-      <Link>Classes\RunnableClass1</Link>
-    </Content>
     <Content Include="AxEdt\COTXCopilotAgentDataverseEnvironment">
       <SubType>Content</SubType>
       <Name>COTXCopilotAgentDataverseEnvironment</Name>
