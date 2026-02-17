@@ -83,8 +83,6 @@ On the **Available In** tab of the Agent Parameters form:
 4. The Copilot chat panel should appear on the right side
 5. Type a message to verify the connection
 
-> **Tip:** Press **Enter** to send a message. Use **Shift+Enter** to insert a newline.
->
 > Use the **↻ New chat** button in the chat header to start a fresh conversation at any time.
 
 
