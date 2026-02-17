@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **MSAL instance caching** — `PublicClientApplication` instances are now cached per `clientId|tenantId` pair and reused across chat restarts, avoiding the memory overhead of redundant MSAL instances
 - **Chat header bar** — new `ensureChatLayout()` function creates a persistent header bar and inner container, separating chrome from the WebChat React tree
 - **Stale init detection** — a monotonically increasing `_initId` counter prevents race conditions when a restart is triggered while a previous initialisation is still in-flight
+- **Vendor library management** — new `Scripts/Update-VendorLibs.ps1` PowerShell script and `Scripts/vendor-libs.json` manifest for downloading and managing third-party JavaScript libraries (MSAL Browser, WebChat, Copilot Studio Client) from npm
+- **Vendor library AxResources** — MSAL Browser, MSAL Redirect Bridge, WebChat, and Copilot Studio Client are now bundled as D365 AxResource items (`COTXMsalBrowser_JS`, `COTXMsalRedirectBridge_JS`, `COTXMsalRedirectBridge_HTML`, `COTXWebChat_JS`, `COTXCopilotStudioClient_MJS`) instead of being loaded from external CDNs
+- **Automated vendor update workflow** — GitHub Actions workflow (`.github/workflows/update-vendor-libs.yml`) runs weekly to check for npm updates and opens a pull request when newer versions are available
 
 ### Fixed
 - **Enter key now sends messages** — the chat container intercepts the Enter keydown event (`stopPropagation`) so the D365 form framework no longer captures it; Shift+Enter still inserts a newline
