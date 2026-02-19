@@ -4,65 +4,9 @@
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
 }
 
-    /* ---------------------------------------------------------------
-       Chat header bar & restart button
-       --------------------------------------------------------------- */
-    [data-dyn-role="COTXCopilotHostControl"] .cotx-chat-header {
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        padding: 6px 12px;
-        border-bottom: 1px solid #E0E0E0;
-        background: #FFFFFF;
-        flex-shrink: 0;
-    }
-
-    [data-dyn-role="COTXCopilotHostControl"] .cotx-chat-restart-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        padding: 4px 12px;
-        font-size: 12px;
-        font-family: inherit;
-        color: #7B68EE;
-        background: transparent;
-        border: 1px solid #7B68EE;
-        border-radius: 16px;
-        cursor: pointer;
-        transition: background-color 0.15s ease, color 0.15s ease;
-        line-height: 1.4;
-    }
-
-        [data-dyn-role="COTXCopilotHostControl"] .cotx-chat-restart-btn:hover {
-            background: #F0EBFF;
-            color: #6A5ACD;
-            border-color: #6A5ACD;
-        }
-
-        [data-dyn-role="COTXCopilotHostControl"] .cotx-chat-restart-btn:active {
-            background: #E8E0FF;
-        }
-
-        [data-dyn-role="COTXCopilotHostControl"] .cotx-chat-restart-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            background: transparent;
-        }
-
-    /* Inner container that holds the WebChat React tree */
-    [data-dyn-role="COTXCopilotHostControl"] .cotx-chat-container {
-        flex: 1;
-        overflow: hidden;
-        position: relative;
-    }
-
-    /* ---------------------------------------------------------------
-       Normalize heading sizes for consistent appearance
-       --------------------------------------------------------------- */
+    /* Normalize heading sizes for consistent appearance */
     [data-dyn-role="COTXCopilotHostControl"] h1 {
         font-size: 1.4em;
         margin: 12px 0 8px 0;
@@ -92,9 +36,7 @@
         margin: 6px 0;
     }
 
-    /* ---------------------------------------------------------------
-       Table styling for content within chat
-       --------------------------------------------------------------- */
+    /* Table styling for content within chat */
     [data-dyn-role="COTXCopilotHostControl"] table {
         border-collapse: collapse;
         font-size: 12px;
@@ -138,9 +80,7 @@
         background: #F5F0FF;
     }
 
-    /* ---------------------------------------------------------------
-       Fix bullet list indentation inside message bubbles
-       --------------------------------------------------------------- */
+    /* Fix bullet list indentation inside message bubbles */
     [data-dyn-role="COTXCopilotHostControl"] ul,
     [data-dyn-role="COTXCopilotHostControl"] ol {
         padding-left: 24px;
@@ -162,14 +102,13 @@
         margin: 4px 0;
     }
 
-    /* ---------------------------------------------------------------
-       Send box & scrollbar styling
-       --------------------------------------------------------------- */
+    /* Send box container styling */
     [data-dyn-role="COTXCopilotHostControl"] [class*="sendbox"] {
         padding: 12px 16px;
         background: #FFFFFF;
     }
 
+    /* Scrollbar styling for modern look */
     [data-dyn-role="COTXCopilotHostControl"] ::-webkit-scrollbar {
         width: 6px;
     }
@@ -186,3 +125,159 @@
         [data-dyn-role="COTXCopilotHostControl"] ::-webkit-scrollbar-thumb:hover {
             background: #A0A0A0;
         }
+
+    /* ------------------------------------------------------------------- */
+    /* Tab bar                                                              */
+    /* ------------------------------------------------------------------- */
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-bar {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        padding: 4px 8px;
+        background: #FAFAFA;
+        border-bottom: 1px solid #E0E0E0;
+        overflow-x: auto;
+        scrollbar-width: thin;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-list {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        flex: 1;
+        min-width: 0;
+        overflow-x: auto;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 5px 10px;
+        border: 1px solid transparent;
+        border-radius: 8px 8px 0 0;
+        background: transparent;
+        color: #767676;
+        font-size: 11px;
+        font-family: inherit;
+        cursor: pointer;
+        white-space: nowrap;
+        max-width: 160px;
+        transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-btn:hover {
+        background: #F0EBFF;
+        color: #5B4DC7;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-btn.cotx-tab-active {
+        background: #FFFFFF;
+        color: #5B4DC7;
+        border-color: #E0E0E0;
+        border-bottom-color: #FFFFFF;
+        font-weight: 600;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-label {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-close {
+        font-size: 14px;
+        line-height: 1;
+        color: #999;
+        cursor: pointer;
+        padding: 0 2px;
+        border-radius: 4px;
+        transition: background 0.15s, color 0.15s;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-close:hover {
+        background: #E8E0FF;
+        color: #5B4DC7;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-add-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: transparent;
+        color: #767676;
+        font-size: 16px;
+        font-family: inherit;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: background 0.15s, color 0.15s;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-add-btn:hover,
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-restart-btn:hover {
+        background: #F0EBFF;
+        color: #5B4DC7;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-restart-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        background: transparent;
+        color: #767676;
+        font-size: 15px;
+        font-family: inherit;
+        cursor: pointer;
+        flex-shrink: 0;
+        margin-left: 2px;
+        transition: background 0.15s, color 0.15s;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-restart-btn:disabled {
+        opacity: 0.4;
+        cursor: default;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-rename-input {
+        border: 1px solid #7B68EE;
+        border-radius: 4px;
+        padding: 1px 4px;
+        font-size: 11px;
+        font-family: inherit;
+        outline: none;
+        width: 80px;
+        background: #FFFFFF;
+    }
+
+    /* Tab container area fills remaining space */
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-container-area {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    /* Each tab's chat container fills the area */
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-chat-container {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    /* Ensure the root control uses flex layout for tabs */
+    [data-dyn-role="COTXCopilotHostControl"] {
+        display: flex;
+        flex-direction: column;
+    }

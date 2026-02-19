@@ -108,19 +108,6 @@
     // -----------------------------------------------------------------------
 
     /**
-     * Shared runtime state for the control instance.
-     *
-     * @property {boolean}  waitingForBotReply - True while we expect the next
-     *           bot message to be the response to a programmatic X++ send.
-     * @property {Object.<string, {tools: Array, cardSent: boolean}>} toolCalls
-     *           - Tracks Dynamic Plan tool definitions keyed by plan identifier.
-     */
-    var _state = {
-        waitingForBotReply: false,
-        toolCalls: {}
-    };
-
-    /**
      * Module-scoped cache for MSAL PublicClientApplication instances, keyed by
      * "clientId|tenantId". Prevents creating duplicate MSAL instances across
      * restarts or multiple control instances on the same page.
@@ -151,12 +138,6 @@
         var cacheKey = appClientId + '|' + tenantId;
 
         if (!_msalCache[cacheKey]) {
-            // Resolve the lightweight redirect bridge page served alongside
-            // this control.  MSAL v5 redirects popup / silent-iframe flows
-            // here so the page can broadcast the auth response back to the
-            // main window via BroadcastChannel (required for COOP support).
-            // This URL must also be registered as a redirect URI in the
-            // Azure AD app registration.
             var redirectBridgeUrl = new URL(
                 'resources/html/COTXMsalRedirectBridge.html',
                 window.location.href
@@ -195,16 +176,22 @@
 
         return cached.initPromise.then(function () {
             var accounts = msalInstance.getAllAccounts();
+            var matchedAccount = accounts.find(function (a) {
+                return a.tenantId.toLowerCase() === tenantId.toLowerCase();
+            }) || accounts[0];
 
-            if (accounts.length > 0) {
+            if (matchedAccount) {
                 return msalInstance.acquireTokenSilent({
                     scopes: loginRequest.scopes,
-                    account: accounts[0]
+                    account: matchedAccount
                 }).then(function (response) {
                     return response.accessToken;
                 }).catch(function (silentError) {
                     console.warn(LOG_PREFIX + '.acquireToken: Silent token failed, trying popup', silentError);
-                    return msalInstance.acquireTokenPopup(loginRequest).then(function (response) {
+                    return msalInstance.acquireTokenPopup({
+                        scopes: loginRequest.scopes,
+                        loginHint: matchedAccount.username
+                    }).then(function (response) {
                         return response.accessToken;
                     });
                 });
@@ -294,11 +281,12 @@
      * non-tool-thought bot text and forwards it to X++ through
      * `data.RaiseAgentResponse`.
      *
-     * @param {Object} action - Redux action.
-     * @param {Object} data   - D365 control data bindings.
+     * @param {Object} action   - Redux action.
+     * @param {Object} data     - D365 control data bindings.
+     * @param {Object} tabState - Per-tab mutable state.
      * @returns {void}
      */
-    function captureAgentResponse(action, data) {
+    function captureAgentResponse(action, data, tabState) {
         if (action.type !== ACTION_TYPES.INCOMING_ACTIVITY) {
             return;
         }
@@ -313,7 +301,7 @@
             return;
         }
 
-        if (!_state.waitingForBotReply) {
+        if (!tabState.waitingForBotReply) {
             return;
         }
 
@@ -323,7 +311,7 @@
             return;
         }
 
-        _state.waitingForBotReply = false;
+        tabState.waitingForBotReply = false;
         $dyn.callFunction(data.RaiseAgentResponse, null, [activity.text]);
     }
 
@@ -448,12 +436,13 @@
      * Stores tool definitions when a `DynamicPlanReceived` event arrives.
      *
      * @param {Object} planValue - The `activity.value` from the plan event.
+     * @param {Object} tabState  - Per-tab mutable state.
      * @returns {void}
      */
-    function handlePlanReceived(planValue) {
+    function handlePlanReceived(planValue, tabState) {
         var planId = planValue.planIdentifier;
 
-        _state.toolCalls[planId] = {
+        tabState.toolCalls[planId] = {
             tools: (planValue.toolDefinitions || []).map(function (tool, index) {
                 return {
                     id: index.toString(),
@@ -478,12 +467,13 @@
      * @param {Object}   stepValue    - The `activity.value` from the step event.
      * @param {Object}   data         - D365 control data bindings.
      * @param {Function} dispatchNext - The store's `next` function for injecting activities.
+     * @param {Object}   tabState     - Per-tab mutable state.
      * @returns {void}
      */
-    function handlePlanStepTriggered(stepValue, data, dispatchNext) {
+    function handlePlanStepTriggered(stepValue, data, dispatchNext, tabState) {
         var planId = stepValue.planIdentifier;
         var thought = stepValue.thought || '';
-        var planData = _state.toolCalls[planId];
+        var planData = tabState.toolCalls[planId];
 
         if (!planData) {
             return;
@@ -545,10 +535,11 @@
      * @param {Object}   action       - Redux action.
      * @param {Object}   data         - D365 control data bindings.
      * @param {Function} dispatchNext - The store's `next` function.
+     * @param {Object}   tabState     - Per-tab mutable state.
      * @returns {boolean} True if the action was a plan event and was consumed
      *          (caller should **not** forward it to `next`).
      */
-    function handleDynamicPlanEvents(action, data, dispatchNext) {
+    function handleDynamicPlanEvents(action, data, dispatchNext, tabState) {
         if (action.type !== ACTION_TYPES.INCOMING_ACTIVITY) {
             return false;
         }
@@ -560,11 +551,11 @@
         }
 
         if (activity.name === EVENT_NAMES.PLAN_RECEIVED && activity.value) {
-            handlePlanReceived(activity.value);
+            handlePlanReceived(activity.value, tabState);
         }
 
         if (activity.name === EVENT_NAMES.PLAN_STEP_TRIGGERED && activity.value) {
-            handlePlanStepTriggered(activity.value, data, dispatchNext);
+            handlePlanStepTriggered(activity.value, data, dispatchNext, tabState);
         }
 
         // All event-type activities are consumed — don't pass to WebChat
@@ -656,10 +647,11 @@
      *  3. Captures bot replies destined for X++.
      *  4. Handles Dynamic Plan tool-call events.
      *
-     * @param {Object} data - D365 control data bindings.
+     * @param {Object} data     - D365 control data bindings.
+     * @param {Object} tabState - Per-tab mutable state.
      * @returns {Object} A WebChat Redux store instance.
      */
-    function createStore(data) {
+    function createStore(data, tabState) {
         return window.WebChat.createStore({}, function () {
             return function (next) {
                 return function (action) {
@@ -672,9 +664,9 @@
 
                     action = enrichOutgoingActivity(action, data);
 
-                    captureAgentResponse(action, data);
+                    captureAgentResponse(action, data, tabState);
 
-                    if (handleDynamicPlanEvents(action, data, next)) {
+                    if (handleDynamicPlanEvents(action, data, next, tabState)) {
                         return;
                     }
 
@@ -734,44 +726,329 @@
     }
 
     /**
-     * Creates the chat header bar (with a restart button) and an inner
-     * container for WebChat, inserting both into the control's root element.
+     * Creates the chat header bar (with a restart button), a tab bar strip,
+     * and an inner container area for per-tab WebChat instances.
      *
-     * Called once during `init`; subsequent calls return the existing inner
-     * container without modification.
+     * Called once during `init`; subsequent calls are no-ops.
      *
      * @param {HTMLElement} element - The control's root DOM element.
      * @param {Object}      self   - The control instance.
-     * @returns {HTMLElement} The inner container element where WebChat should render.
+     * @returns {void}
      */
-    function ensureChatLayout(element, self) {
-        if (self._chatContainer) {
-            return self._chatContainer;
+       function ensureChatLayout(element, self) {
+        if (self._layoutReady) {
+            return;
         }
 
-        // Header bar
-        var header = document.createElement('div');
-        header.className = 'cotx-chat-header';
+        // Tab bar
+        var tabBar = document.createElement('div');
+        tabBar.className = 'cotx-tab-bar';
+
+        var tabList = document.createElement('div');
+        tabList.className = 'cotx-tab-list';
+
+        var addTabBtn = document.createElement('button');
+        addTabBtn.className = 'cotx-tab-add-btn';
+        addTabBtn.type = 'button';
+        addTabBtn.title = 'New conversation tab';
+        addTabBtn.textContent = '+';
 
         var restartBtn = document.createElement('button');
-        restartBtn.className = 'cotx-chat-restart-btn';
+        restartBtn.className = 'cotx-tab-restart-btn';
         restartBtn.type = 'button';
-        restartBtn.title = 'Start a new conversation';
-        restartBtn.textContent = '\u21BB New chat';
+        restartBtn.title = 'Restart current conversation';
+        restartBtn.textContent = '\u21BB';
 
-        header.appendChild(restartBtn);
+        tabBar.appendChild(tabList);
+        tabBar.appendChild(addTabBtn);
+        tabBar.appendChild(restartBtn);
 
-        // Inner container for WebChat
+        // Container area where per-tab chat containers live
+        var containerArea = document.createElement('div');
+        containerArea.className = 'cotx-tab-container-area';
+
+        element.appendChild(tabBar);
+        element.appendChild(containerArea);
+
+        self._restartButton = restartBtn;
+        self._tabList = tabList;
+        self._addTabBtn = addTabBtn;
+        self._containerArea = containerArea;
+        self._layoutReady = true;
+    }
+
+    // -----------------------------------------------------------------------
+    // Tab management
+    // -----------------------------------------------------------------------
+
+    /**
+     * Creates a new conversation tab, initialises its WebChat connection, and
+     * switches to it.
+     *
+     * @param {Object} data   - D365 control data bindings.
+     * @param {Object} params - Validated control parameters.
+     * @param {Object} self   - The control instance.
+     * @returns {string|null} The new tab's ID, or null if the limit was reached.
+     */
+    function createTab(data, params, self) {
+        var tm = self._tabManager;
+
+        if (tm.tabOrder.length >= tm.maxTabs) {
+            console.warn(LOG_PREFIX + '.createTab: Maximum tabs reached (' + tm.maxTabs + ')');
+            return null;
+        }
+
+        var tabId = 'tab-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+        var tabName = 'Chat ' + tm.nextTabNum++;
+
+        var tab = {
+            id: tabId,
+            name: tabName,
+            container: null,
+            tabButton: null,
+            tabLabel: null,
+            directLine: null,
+            store: null,
+            state: { waitingForBotReply: false, toolCalls: {} },
+            pendingMessageSubscription: null,
+            keepConnectionAlive: false,
+            initId: 0,
+            initialized: false
+        };
+
+        // Create chat container for this tab
         var container = document.createElement('div');
         container.className = 'cotx-chat-container';
+        container.style.display = 'none';
+        container.setAttribute('data-tab-id', tabId);
+        self._containerArea.appendChild(container);
+        tab.container = container;
 
-        element.appendChild(header);
-        element.appendChild(container);
+        // Prevent D365 form framework from capturing Enter key inside WebChat
+        container.addEventListener('keydown', function (event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.stopPropagation();
+            }
+        });
 
-        self._chatContainer = container;
-        self._restartButton = restartBtn;
+        // Create tab button
+        var tabBtn = document.createElement('button');
+        tabBtn.className = 'cotx-tab-btn';
+        tabBtn.type = 'button';
+        tabBtn.setAttribute('data-tab-id', tabId);
 
-        return container;
+        var tabLabel = document.createElement('span');
+        tabLabel.className = 'cotx-tab-label';
+        tabLabel.textContent = tabName;
+        tabBtn.appendChild(tabLabel);
+
+        var closeBtn = document.createElement('span');
+        closeBtn.className = 'cotx-tab-close';
+        closeBtn.textContent = '\u00D7';
+        closeBtn.title = 'Close tab';
+        tabBtn.appendChild(closeBtn);
+
+        closeBtn.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (tm.tabOrder.length > 1) {
+                closeTabById(tabId, data, self);
+            }
+        });
+
+        tabBtn.addEventListener('click', function () {
+            switchToTab(tabId, self);
+        });
+
+        // Double-click tab label to rename
+        tabLabel.addEventListener('dblclick', function (e) {
+            e.stopPropagation();
+            startTabRename(tabId, self);
+        });
+
+        self._tabList.appendChild(tabBtn);
+        tab.tabButton = tabBtn;
+        tab.tabLabel = tabLabel;
+
+        // Register in tab manager
+        tm.tabs[tabId] = tab;
+        tm.tabOrder.push(tabId);
+
+        // Switch to new tab
+        switchToTab(tabId, self);
+
+        // Initialise WebChat in the tab
+        initializeWebChat(container, data, params, self, tab)
+            .then(function () {
+                tab.initialized = true;
+                console.log(LOG_PREFIX + '.createTab: Tab initialized \u2014 ' + tabName);
+            })
+            .catch(function (error) {
+                console.error(LOG_PREFIX + '.createTab: Error initializing tab', error);
+
+                // Show error message inside the tab container
+                if (tab.container) {
+                    tab.container.innerHTML = '<div style="padding:16px;color:#C00;font-size:12px;">' +
+                        '\u26A0 Failed to initialise conversation. Please close this tab and try again.' +
+                        '</div>';
+                }
+            });
+
+        updateTabCloseButtons(self);
+        return tabId;
+    }
+
+    /**
+     * Switches the visible conversation to the specified tab.
+     *
+     * @param {string} tabId - The tab ID to activate.
+     * @param {Object} self  - The control instance.
+     * @returns {void}
+     */
+    function switchToTab(tabId, self) {
+        var tm = self._tabManager;
+        if (!tm.tabs[tabId]) { return; }
+
+        // Hide current tab
+        if (tm.activeTabId && tm.tabs[tm.activeTabId]) {
+            var currentTab = tm.tabs[tm.activeTabId];
+            currentTab.container.style.display = 'none';
+            if (currentTab.tabButton) {
+                currentTab.tabButton.classList.remove('cotx-tab-active');
+            }
+        }
+
+        // Show target tab
+        var newTab = tm.tabs[tabId];
+        newTab.container.style.display = '';
+        if (newTab.tabButton) {
+            newTab.tabButton.classList.add('cotx-tab-active');
+        }
+
+        tm.activeTabId = tabId;
+    }
+
+    /**
+     * Closes and tears down a conversation tab.
+     *
+     * @param {string} tabId - The tab ID to close.
+     * @param {Object} data  - D365 control data bindings.
+     * @param {Object} self  - The control instance.
+     * @returns {void}
+     */
+    function closeTabById(tabId, data, self) {
+        var tm = self._tabManager;
+        var tab = tm.tabs[tabId];
+        if (!tab) { return; }
+        if (tm.tabOrder.length <= 1) { return; }
+
+        // Dispose resources
+        tab.pendingMessageSubscription = disposeSubscription(tab.pendingMessageSubscription);
+        tab.initId++;
+
+        if (tab.container && window.ReactDOM && window.ReactDOM.unmountComponentAtNode) {
+            window.ReactDOM.unmountComponentAtNode(tab.container);
+        }
+
+        if (tab.directLine && typeof tab.directLine.end === 'function') {
+            if (!tab.keepConnectionAlive) {
+                tab.directLine.end();
+            }
+            tab.directLine = null;
+        }
+
+        // Remove DOM elements
+        if (tab.container && tab.container.parentNode) {
+            tab.container.parentNode.removeChild(tab.container);
+        }
+        if (tab.tabButton && tab.tabButton.parentNode) {
+            tab.tabButton.parentNode.removeChild(tab.tabButton);
+        }
+
+        // Remove from tab manager
+        var idx = tm.tabOrder.indexOf(tabId);
+        tm.tabOrder.splice(idx, 1);
+        delete tm.tabs[tabId];
+
+        // Switch to nearest tab if this was the active one
+        if (tm.activeTabId === tabId) {
+            var newIdx = Math.min(idx, tm.tabOrder.length - 1);
+            switchToTab(tm.tabOrder[newIdx], self);
+        }
+
+        updateTabCloseButtons(self);
+    }
+
+    /**
+     * Displays an inline rename input on the tab label.
+     *
+     * @param {string} tabId - The tab ID to rename.
+     * @param {Object} self  - The control instance.
+     * @returns {void}
+     */
+    function startTabRename(tabId, self) {
+        var tab = self._tabManager.tabs[tabId];
+        if (!tab || !tab.tabLabel) { return; }
+
+        var label = tab.tabLabel;
+        var currentName = label.textContent;
+
+        var input = document.createElement('input');
+        input.type = 'text';
+        input.className = 'cotx-tab-rename-input';
+        input.value = currentName;
+
+        label.textContent = '';
+        label.appendChild(input);
+        input.focus();
+        input.select();
+
+        function finishRename() {
+            var newName = input.value.trim() || currentName;
+            tab.name = newName;
+            if (label.contains(input)) {
+                label.removeChild(input);
+            }
+            label.textContent = newName;
+        }
+
+        input.addEventListener('blur', finishRename);
+        input.addEventListener('keydown', function (e) {
+            if (e.key === 'Enter') { input.blur(); }
+            if (e.key === 'Escape') { input.value = currentName; input.blur(); }
+            e.stopPropagation();
+        });
+    }
+
+    /**
+     * Shows or hides the close button on each tab depending on whether more
+     * than one tab is open (the last tab cannot be closed). Also enables or
+     * disables the add-tab button when the tab limit is reached.
+     *
+     * @param {Object} self - The control instance.
+     * @returns {void}
+     */
+    function updateTabCloseButtons(self) {
+        var tm = self._tabManager;
+        var hideClose = tm.tabOrder.length <= 1;
+
+        tm.tabOrder.forEach(function (tabId) {
+            var tab = tm.tabs[tabId];
+            if (tab && tab.tabButton) {
+                var closeEl = tab.tabButton.querySelector('.cotx-tab-close');
+                if (closeEl) {
+                    closeEl.style.display = hideClose ? 'none' : '';
+                }
+            }
+        });
+
+        // Disable the add-tab button when the limit is reached
+        if (self._addTabBtn) {
+            var atLimit = tm.tabOrder.length >= tm.maxTabs;
+            self._addTabBtn.disabled = atLimit;
+            self._addTabBtn.title = atLimit
+                ? 'Maximum of ' + tm.maxTabs + ' tabs reached'
+                : 'New conversation tab';
+        }
     }
 
     // -----------------------------------------------------------------------
@@ -779,7 +1056,7 @@
     // -----------------------------------------------------------------------
 
     /**
-     * Tears down the current WebChat session and bootstraps a fresh one.
+     * Tears down the active tab's WebChat session and bootstraps a fresh one.
      *
      * Cleanup steps:
      *  1. Disposes the `$dyn.observe` subscription on PendingMessage.
@@ -787,41 +1064,45 @@
      *  3. Unmounts the React component tree via `ReactDOM.unmountComponentAtNode`
      *     so that all internal subscriptions, timers, and closures held by
      *     WebChat and its Redux store are properly released.
-     *  4. Resets module-scoped mutable state.
+     *  4. Resets per-tab mutable state.
      *
      * A new token, connection, store, and React tree are then created via
      * {@link initializeWebChat}.
      *
-     * @param {HTMLElement} chatContainer - The inner element hosting WebChat.
      * @param {Object}      data          - D365 control data bindings.
      * @param {Object}      self          - The control instance.
      * @returns {Promise<void>}
      */
-    function restartChat(chatContainer, data, self) {
+    function restartChat(data, self) {
+        var tm = self._tabManager;
+        var tab = tm.tabs[tm.activeTabId];
+        if (!tab) { return Promise.resolve(); }
+
         // Double-click protection
         if (self._restartButton) {
             self._restartButton.disabled = true;
         }
 
         // 1. Dispose $dyn.observe subscription
-        self._pendingMessageSubscription = disposeSubscription(self._pendingMessageSubscription);
+        tab.pendingMessageSubscription = disposeSubscription(tab.pendingMessageSubscription);
 
         // 2. End the Direct Line connection
-        if (self._directLine && typeof self._directLine.end === 'function') {
-            self._directLine.end();
-            self._directLine = null;
+        if (tab.directLine && typeof tab.directLine.end === 'function') {
+            tab.directLine.end();
+            tab.directLine = null;
         }
 
         // 3. Properly unmount the React component tree so WebChat releases
         //    all internal subscriptions, timers, and Redux store closures.
         //    ReactDOM is exposed globally by the WebChat CDN full bundle.
-        if (window.ReactDOM && window.ReactDOM.unmountComponentAtNode) {
-            window.ReactDOM.unmountComponentAtNode(chatContainer);
+        if (tab.container && window.ReactDOM && window.ReactDOM.unmountComponentAtNode) {
+            window.ReactDOM.unmountComponentAtNode(tab.container);
         }
 
-        // 4. Reset module-scoped state
-        _state.waitingForBotReply = false;
-        _state.toolCalls = {};
+        // 4. Reset per-tab state
+        tab.store = null;
+        tab.state.waitingForBotReply = false;
+        tab.state.toolCalls = {};
 
         // 5. Re-initialise
         var params = readControlParameters(data);
@@ -834,20 +1115,20 @@
             return Promise.reject(new Error(LOG_PREFIX + '.restartChat: Missing control parameters'));
         }
 
-        return initializeWebChat(chatContainer, data, params, self)
+        return initializeWebChat(tab.container, data, params, self, tab)
             .then(function () {
                 if (self._restartButton) {
                     self._restartButton.disabled = false;
                 }
 
-                console.log(LOG_PREFIX + '.restartChat: Chat restarted successfully');
+                console.log(LOG_PREFIX + '.restartChat: Tab restarted \u2014 ' + tab.name);
             })
             .catch(function (error) {
                 if (self._restartButton) {
                     self._restartButton.disabled = false;
                 }
 
-                console.error(LOG_PREFIX + '.restartChat: Error restarting chat', error);
+                console.error(LOG_PREFIX + '.restartChat: Error restarting tab', error);
             });
     }
 
@@ -905,7 +1186,7 @@
             appClientId: $dyn.peek(data.AppClientId),
             tenantId: $dyn.peek(data.TenantId),
             environmentId: $dyn.peek(data.EnvironmentId),
-            agentId: $dyn.peek(data.AgentIdentifier)
+            agentId: $dyn.peek(data.AgentIdentifier),
         };
 
         if (!params.appClientId || !params.tenantId || !params.environmentId || !params.agentId) {
@@ -918,20 +1199,30 @@
 
     /**
      * Wires up the `PendingMessage` observer so that when X++ sets a value,
-     * the message is dispatched through WebChat and the observable is cleared.
+     * the message is dispatched through the active tab's WebChat store and
+     * the observable is cleared. Only the active tab processes the message;
+     * inactive tabs ignore it.
      *
-     * @param {Object} data  - D365 control data bindings.
-     * @param {Object} store - WebChat Redux store.
+     * @param {Object} data      - D365 control data bindings.
+     * @param {Object} store     - WebChat Redux store.
+     * @param {Object} tabState  - Per-tab mutable state.
+     * @param {string} tabId     - The tab this subscription belongs to.
+     * @param {Object} self      - The control instance.
      * @returns {Object} The `$dyn.observe` subscription (call `.dispose()` to
      *          unsubscribe).
      */
-    function observePendingMessages(data, store) {
+    function observePendingMessages(data, store, tabState, tabId, self) {
         return $dyn.observe(data.PendingMessage, function (message) {
             if (!message) {
                 return;
             }
 
-            _state.waitingForBotReply = true;
+            // Only the active tab should process PendingMessage
+            if (self._tabManager.activeTabId !== tabId) {
+                return;
+            }
+
+            tabState.waitingForBotReply = true;
 
             store.dispatch({
                 type: ACTION_TYPES.SEND_MESSAGE,
@@ -952,7 +1243,7 @@
      * the Copilot Studio Direct Line connection, renders WebChat into the host
      * element, and starts observing X++ pending messages.
      *
-     * Uses an incrementing `_initId` on the control instance to detect stale
+     * Uses an incrementing `initId` on the tab object to detect stale
      * initialisations — if a restart is triggered while a previous init is
      * in-flight, the earlier init's `.then` callbacks silently bail out.
      *
@@ -960,25 +1251,27 @@
      * @param {Object}      data   - D365 control data bindings.
      * @param {{ appClientId: string, tenantId: string, environmentId: string, agentId: string }} params
      *        - Validated control parameters.
-     * @param {Object}      self   - The control instance (for storing the Direct Line reference).
+     * @param {Object}      self   - The control instance.
+     * @param {Object}      tab    - The tab object to initialise.
      * @returns {Promise<void>}
      */
-    function initializeWebChat(element, data, params, self) {
-        var myInitId = ++self._initId;
+    function initializeWebChat(element, data, params, self, tab) {
+        var myInitId = ++tab.initId;
 
         return acquireToken(params.appClientId, params.tenantId)
             .then(function (token) {
-                if (self._initId !== myInitId) { return; }
+                if (tab.initId !== myInitId) { return; }
 
                 return createCopilotConnection(token, params.environmentId, params.agentId);
             })
             .then(function (directLine) {
-                if (!directLine || self._initId !== myInitId) { return; }
+                if (!directLine || tab.initId !== myInitId) { return; }
 
-                self._directLine = directLine;
-                self._keepConnectionAlive = !!$dyn.peek(data.KeepConnectionAlive);
+                tab.directLine = directLine;
+                tab.keepConnectionAlive = !!$dyn.peek(data.KeepConnectionAlive);
 
-                var store = createStore(data);
+                var store = createStore(data, tab.state);
+                tab.store = store;
 
                 window.WebChat.renderWebChat({
                     directLine: directLine,
@@ -986,7 +1279,7 @@
                     store: store
                 }, element);
 
-                self._pendingMessageSubscription = observePendingMessages(data, store);
+                tab.pendingMessageSubscription = observePendingMessages(data, store, tab.state, tab.id, self);
             });
     }
 
@@ -1006,23 +1299,35 @@
         $dyn.ui.Control.apply(this, arguments);
         $dyn.ui.applyDefaults(this, data, $dyn.ui.defaults.COTXCopilotHostControl);
 
-        /** @type {Object|null} Direct Line connection reference (for cleanup). */
-        this._directLine = null;
-
-        /** @type {boolean} When true, the Direct Line connection is kept alive on dispose. */
-        this._keepConnectionAlive = false;
-
-        /** @type {Object|null} Subscription returned by `$dyn.observe` on PendingMessage. */
-        this._pendingMessageSubscription = null;
-
-        /** @type {HTMLElement|null} Inner container element where WebChat renders. */
-        this._chatContainer = null;
+        /** @type {boolean} True once the layout shell has been created. */
+        this._layoutReady = false;
 
         /** @type {HTMLElement|null} The restart button element. */
         this._restartButton = null;
 
-        /** @type {number} Monotonically increasing initialisation counter for stale-init detection. */
-        this._initId = 0;
+        /** @type {HTMLElement|null} The tab list container. */
+        this._tabList = null;
+
+        /** @type {HTMLElement|null} The add-tab button. */
+        this._addTabBtn = null;
+
+        /** @type {HTMLElement|null} Container area where per-tab chat containers live. */
+        this._containerArea = null;
+
+        /**
+         * Per-instance tab manager — holds all open conversation tabs and tracks
+         * the active one. Instance-scoped to avoid collisions when multiple
+         * controls exist on the same page.
+         *
+         * @type {{ tabs: Object, activeTabId: string|null, tabOrder: string[], nextTabNum: number, maxTabs: number }}
+         */
+        this._tabManager = {
+            tabs: {},
+            activeTabId: null,
+            tabOrder: [],
+            nextTabNum: 1,
+            maxTabs: 8
+        };
     };
 
     $dyn.controls.COTXCopilotHostControl.prototype = $dyn.ui.extendPrototype($dyn.ui.Control.prototype, {
@@ -1049,21 +1354,20 @@
                         return;
                     }
 
-                    var chatContainer = ensureChatLayout(element, self);
+                    ensureChatLayout(element, self);
 
-                    // Prevent D365 form framework from capturing Enter key inside WebChat
-                    chatContainer.addEventListener('keydown', function (event) {
-                        if (event.key === 'Enter' && !event.shiftKey) {
-                            event.stopPropagation();
-                        }
-                    });
-
-                    // Wire up the restart button
+                    // Wire up the restart button (restarts the active tab)
                     self._restartButton.addEventListener('click', function () {
-                        restartChat(chatContainer, data, self);
+                        restartChat(data, self);
                     });
 
-                    return initializeWebChat(chatContainer, data, params, self);
+                    // Wire up the add-tab button
+                    self._addTabBtn.addEventListener('click', function () {
+                        createTab(data, params, self);
+                    });
+
+                    // Create the first conversation tab
+                    createTab(data, params, self);
                 })
                 .catch(function (error) {
                     console.error(LOG_PREFIX + '.init: Error initializing', error);
@@ -1079,36 +1383,42 @@
          * @returns {void}
          */
         dispose: function () {
-            // Dispose the $dyn.observe subscription
-            this._pendingMessageSubscription = disposeSubscription(this._pendingMessageSubscription);
+            var tm = this._tabManager;
 
-            // Invalidate any in-flight initialisation so stale callbacks bail out
-            this._initId++;
+            // Tear down every tab
+            tm.tabOrder.slice().forEach(function (tabId) {
+                var tab = tm.tabs[tabId];
+                if (!tab) { return; }
 
-            // Unmount the React tree so WebChat releases internal subscriptions,
-            // timers, and Redux store closures
-            if (this._chatContainer) {
-                if (window.ReactDOM && window.ReactDOM.unmountComponentAtNode) {
-                    window.ReactDOM.unmountComponentAtNode(this._chatContainer);
+                tab.pendingMessageSubscription = disposeSubscription(tab.pendingMessageSubscription);
+                tab.initId++;
+
+                if (tab.container && window.ReactDOM && window.ReactDOM.unmountComponentAtNode) {
+                    window.ReactDOM.unmountComponentAtNode(tab.container);
                 }
 
-                this._chatContainer = null;
-            }
-
-            // End the Direct Line connection
-            if (this._directLine) {
-                if (this._keepConnectionAlive) {
-                    console.log(LOG_PREFIX + '.dispose: KeepConnectionAlive is set — Direct Line connection preserved');
-                } else if (typeof this._directLine.end === 'function') {
-                    this._directLine.end();
-                    this._directLine = null;
-                    console.log(LOG_PREFIX + '.dispose: Direct Line connection ended');
+                if (tab.directLine) {
+                    if (tab.keepConnectionAlive) {
+                        console.log(LOG_PREFIX + '.dispose: KeepConnectionAlive — tab ' + tab.name + ' preserved');
+                    } else if (typeof tab.directLine.end === 'function') {
+                        tab.directLine.end();
+                        tab.directLine = null;
+                        console.log(LOG_PREFIX + '.dispose: DirectLine ended for tab ' + tab.name);
+                    }
                 }
-            }
+            });
 
-            // Reset module state so a fresh control instance starts clean
-            _state.waitingForBotReply = false;
-            _state.toolCalls = {};
+            // Reset tab manager
+            tm.tabs = {};
+            tm.activeTabId = null;
+            tm.tabOrder = [];
+            tm.nextTabNum = 1;
+
+            this._layoutReady = false;
+            this._containerArea = null;
+            this._tabList = null;
+            this._addTabBtn = null;
+            this._restartButton = null;
 
             $dyn.ui.Control.prototype.dispose.apply(this, arguments);
         }
