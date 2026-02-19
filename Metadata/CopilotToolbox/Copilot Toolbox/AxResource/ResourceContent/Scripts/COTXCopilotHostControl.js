@@ -135,6 +135,10 @@
      * @returns {Promise<string>}    The access token string.
      */
     function acquireToken(appClientId, tenantId) {
+        if (!window.msal || typeof msal.PublicClientApplication !== 'function') {
+            return Promise.reject(new Error(LOG_PREFIX + '.acquireToken: msal.PublicClientApplication is not available. Ensure the MSAL library is loaded.'));
+        }
+
         var cacheKey = appClientId + '|' + tenantId;
 
         if (!_msalCache[cacheKey]) {
@@ -455,7 +459,7 @@
             cardSent: false
         };
 
-        console.log(LOG_PREFIX + '.handlePlanReceived: Plan registered', planId);
+        console.debug(LOG_PREFIX + '.handlePlanReceived: Plan registered', planId);
     }
 
     /**
@@ -490,7 +494,7 @@
         var showThoughts = !!$dyn.peek(data.ShowThoughts);
 
         if (planData.cardSent || planData.tools.length === 0 || !showToolCalls) {
-            console.log(LOG_PREFIX + '.handlePlanStepTriggered:', thought);
+            console.debug(LOG_PREFIX + '.handlePlanStepTriggered:', thought);
             return;
         }
 
@@ -524,7 +528,7 @@
             payload: { activity: cardActivity }
         });
 
-        console.log(LOG_PREFIX + '.handlePlanStepTriggered:', thought);
+        console.debug(LOG_PREFIX + '.handlePlanStepTriggered:', thought);
     }
 
     /**
@@ -629,7 +633,7 @@
                 payload: { activity: thoughtActivity }
             });
 
-            console.log(LOG_PREFIX + '.handleCompletedThoughts: Injected thought —', entity.title);
+            console.debug(LOG_PREFIX + '.handleCompletedThoughts: Injected thought —', entity.title);
             injected = true;
         });
 
@@ -798,7 +802,7 @@
             return null;
         }
 
-        var tabId = 'tab-' + Date.now() + '-' + Math.random().toString(36).substr(2, 5);
+        var tabId = 'tab-' + Date.now() + '-' + Math.random().toString(36).substring(2, 7);
         var tabName = 'Chat ' + tm.nextTabNum++;
 
         var tab = {
@@ -880,16 +884,18 @@
         initializeWebChat(container, data, params, self, tab)
             .then(function () {
                 tab.initialized = true;
-                console.log(LOG_PREFIX + '.createTab: Tab initialized \u2014 ' + tabName);
+                console.debug(LOG_PREFIX + '.createTab: Tab initialized \u2014 ' + tabName);
             })
             .catch(function (error) {
                 console.error(LOG_PREFIX + '.createTab: Error initializing tab', error);
 
                 // Show error message inside the tab container
                 if (tab.container) {
-                    tab.container.innerHTML = '<div style="padding:16px;color:#C00;font-size:12px;">' +
-                        '\u26A0 Failed to initialise conversation. Please close this tab and try again.' +
-                        '</div>';
+                    var errorDiv = document.createElement('div');
+                    errorDiv.style.cssText = 'padding:16px;color:#C00;font-size:12px;';
+                    errorDiv.textContent = '\u26A0 Failed to initialise conversation. Please close this tab and try again.';
+                    tab.container.textContent = '';
+                    tab.container.appendChild(errorDiv);
                 }
             });
 
@@ -1121,7 +1127,7 @@
                     self._restartButton.disabled = false;
                 }
 
-                console.log(LOG_PREFIX + '.restartChat: Tab restarted \u2014 ' + tab.name);
+                console.debug(LOG_PREFIX + '.restartChat: Tab restarted \u2014 ' + tab.name);
             })
             .catch(function (error) {
                 if (self._restartButton) {
@@ -1399,11 +1405,11 @@
 
                 if (tab.directLine) {
                     if (tab.keepConnectionAlive) {
-                        console.log(LOG_PREFIX + '.dispose: KeepConnectionAlive — tab ' + tab.name + ' preserved');
+                        console.debug(LOG_PREFIX + '.dispose: KeepConnectionAlive — tab ' + tab.name + ' preserved');
                     } else if (typeof tab.directLine.end === 'function') {
                         tab.directLine.end();
                         tab.directLine = null;
-                        console.log(LOG_PREFIX + '.dispose: DirectLine ended for tab ' + tab.name);
+                        console.debug(LOG_PREFIX + '.dispose: DirectLine ended for tab ' + tab.name);
                     }
                 }
             });

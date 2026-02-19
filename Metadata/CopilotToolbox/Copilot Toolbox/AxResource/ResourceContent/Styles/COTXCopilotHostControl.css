@@ -1,10 +1,36 @@
 ﻿/* Copilot-style Chat Control */
 [data-dyn-role="COTXCopilotHostControl"] {
+    /* ---- Theme tokens ---- */
+    --cotx-accent: #7B68EE;
+    --cotx-accent-hover: #6A5ACD;
+    --cotx-accent-dark: #5B4DC7;
+    --cotx-bg: #FFFFFF;
+    --cotx-bg-subtle: #F5F5F5;
+    --cotx-bg-hover: #F0EBFF;
+    --cotx-bg-alt: #FAFAFA;
+    --cotx-text: #1A1A1A;
+    --cotx-text-subtle: #767676;
+    --cotx-border: #E0E0E0;
+    --cotx-bubble-user-bg: #E8E0FF;
+    --cotx-bubble-user-border: #D4C8FF;
+    --cotx-error: #C00;
+    --cotx-scrollbar-thumb: #C0C0C0;
+    --cotx-scrollbar-thumb-hover: #A0A0A0;
+
+    /* ---- Base layout ---- */
     font-size: 12px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
+    box-sizing: border-box;
 }
+
+    /* Inherit box-sizing for all descendants */
+    [data-dyn-role="COTXCopilotHostControl"] *,
+    [data-dyn-role="COTXCopilotHostControl"] *::before,
+    [data-dyn-role="COTXCopilotHostControl"] *::after {
+        box-sizing: inherit;
+    }
 
     /* Normalize heading sizes for consistent appearance */
     [data-dyn-role="COTXCopilotHostControl"] h1 {
@@ -50,30 +76,30 @@
 
     [data-dyn-role="COTXCopilotHostControl"] th {
         font-weight: 600;
-        border: 1px solid #E0E0E0;
+        border: 1px solid var(--cotx-border);
         text-align: left;
         vertical-align: top;
         padding: 10px 12px;
-        background: #F5F5F5;
-        color: #1A1A1A;
+        background: var(--cotx-bg-subtle);
+        color: var(--cotx-text);
     }
 
     [data-dyn-role="COTXCopilotHostControl"] td {
-        border: 1px solid #E0E0E0;
+        border: 1px solid var(--cotx-border);
         text-align: left;
         vertical-align: top;
         padding: 10px 12px;
-        color: #1A1A1A;
+        color: var(--cotx-text);
     }
 
     [data-dyn-role="COTXCopilotHostControl"] thead th {
-        background: #F0EBFF;
-        color: #5B4DC7;
-        border-bottom: 2px solid #7B68EE;
+        background: var(--cotx-bg-hover);
+        color: var(--cotx-accent-dark);
+        border-bottom: 2px solid var(--cotx-accent);
     }
 
     [data-dyn-role="COTXCopilotHostControl"] tbody tr:nth-child(even) {
-        background: #FAFAFA;
+        background: var(--cotx-bg-alt);
     }
 
     [data-dyn-role="COTXCopilotHostControl"] tbody tr:hover {
@@ -105,10 +131,17 @@
     /* Send box container styling */
     [data-dyn-role="COTXCopilotHostControl"] [class*="sendbox"] {
         padding: 12px 16px;
-        background: #FFFFFF;
+        background: var(--cotx-bg);
     }
 
     /* Scrollbar styling for modern look */
+    /* Firefox */
+    [data-dyn-role="COTXCopilotHostControl"] {
+        scrollbar-width: thin;
+        scrollbar-color: var(--cotx-scrollbar-thumb) transparent;
+    }
+
+    /* Chromium / Safari */
     [data-dyn-role="COTXCopilotHostControl"] ::-webkit-scrollbar {
         width: 6px;
     }
@@ -118,12 +151,12 @@
     }
 
     [data-dyn-role="COTXCopilotHostControl"] ::-webkit-scrollbar-thumb {
-        background: #C0C0C0;
+        background: var(--cotx-scrollbar-thumb);
         border-radius: 3px;
     }
 
         [data-dyn-role="COTXCopilotHostControl"] ::-webkit-scrollbar-thumb:hover {
-            background: #A0A0A0;
+            background: var(--cotx-scrollbar-thumb-hover);
         }
 
     /* ------------------------------------------------------------------- */
@@ -135,8 +168,8 @@
         align-items: center;
         gap: 2px;
         padding: 4px 8px;
-        background: #FAFAFA;
-        border-bottom: 1px solid #E0E0E0;
+        background: var(--cotx-bg-alt);
+        border-bottom: 1px solid var(--cotx-border);
         overflow-x: auto;
         scrollbar-width: thin;
     }
@@ -158,7 +191,7 @@
         border: 1px solid transparent;
         border-radius: 8px 8px 0 0;
         background: transparent;
-        color: #767676;
+        color: var(--cotx-text-subtle);
         font-size: 11px;
         font-family: inherit;
         cursor: pointer;
@@ -168,15 +201,15 @@
     }
 
     [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-btn:hover {
-        background: #F0EBFF;
-        color: #5B4DC7;
+        background: var(--cotx-bg-hover);
+        color: var(--cotx-accent-dark);
     }
 
     [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-btn.cotx-tab-active {
-        background: #FFFFFF;
-        color: #5B4DC7;
-        border-color: #E0E0E0;
-        border-bottom-color: #FFFFFF;
+        background: var(--cotx-bg);
+        color: var(--cotx-accent-dark);
+        border-color: var(--cotx-border);
+        border-bottom-color: var(--cotx-bg);
         font-weight: 600;
     }
 
@@ -197,8 +230,8 @@
     }
 
     [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-close:hover {
-        background: #E8E0FF;
-        color: #5B4DC7;
+        background: var(--cotx-bubble-user-bg);
+        color: var(--cotx-accent-dark);
     }
 
     [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-add-btn {
@@ -210,7 +243,7 @@
         border: 1px solid transparent;
         border-radius: 6px;
         background: transparent;
-        color: #767676;
+        color: var(--cotx-text-subtle);
         font-size: 16px;
         font-family: inherit;
         cursor: pointer;
@@ -220,8 +253,8 @@
 
     [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-add-btn:hover,
     [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-restart-btn:hover {
-        background: #F0EBFF;
-        color: #5B4DC7;
+        background: var(--cotx-bg-hover);
+        color: var(--cotx-accent-dark);
     }
 
     [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-restart-btn {
@@ -233,7 +266,7 @@
         border: 1px solid transparent;
         border-radius: 6px;
         background: transparent;
-        color: #767676;
+        color: var(--cotx-text-subtle);
         font-size: 15px;
         font-family: inherit;
         cursor: pointer;
@@ -248,14 +281,14 @@
     }
 
     [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-rename-input {
-        border: 1px solid #7B68EE;
+        border: 1px solid var(--cotx-accent);
         border-radius: 4px;
         padding: 1px 4px;
         font-size: 11px;
         font-family: inherit;
         outline: none;
         width: 80px;
-        background: #FFFFFF;
+        background: var(--cotx-bg);
     }
 
     /* Tab container area fills remaining space */
@@ -281,3 +314,29 @@
         display: flex;
         flex-direction: column;
     }
+
+/* ------------------------------------------------------------------- */
+/* High-contrast / forced-colors accessibility support                  */
+/* ------------------------------------------------------------------- */
+
+@media (forced-colors: active) {
+    [data-dyn-role="COTXCopilotHostControl"] {
+        border: 1px solid ButtonText;
+        box-shadow: none;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-btn.cotx-tab-active {
+        border: 2px solid Highlight;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-close:hover,
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-add-btn:hover,
+    [data-dyn-role="COTXCopilotHostControl"] .cotx-tab-restart-btn:hover {
+        outline: 1px solid Highlight;
+    }
+
+    [data-dyn-role="COTXCopilotHostControl"] th,
+    [data-dyn-role="COTXCopilotHostControl"] td {
+        border-color: ButtonText;
+    }
+}
