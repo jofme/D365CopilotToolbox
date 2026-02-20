@@ -2,7 +2,6 @@
  ;Label file comment - see above label
 COTXCopilotContext=Copilot Context
 COTXCopilotHostContextId=Copilot Context Id
-COTXDirectLineSecretKey=DirectLine Secret
 COTXCopilotHostFormContextParameters=Copilot Context Parameters
 COTXCopilotEnvironment=Copilot Environment
 COTXCopilotAgent=Copilot Agent
@@ -10,7 +9,6 @@ COTXEntraId=Entra Id
 COTXCopilotSidePanelDisplay=Use Copilot side panel
 COTXCopilotParameterView=View Copilot parameters
 COTXCopilotParameterMaintain=Maintain Copilot parameters
-COTXCopilotParameterSecretView=View Copilot secrets
 COTXCopilotUserDuty=Copilot user
 COTXCopilotAdminDuty=Copilot administrator
 COTXCopilotUserRole=Copilot user role
@@ -27,6 +25,12 @@ COTXSendGlobalContext=Send Global FSCM Context
  ;Toggle to send global D365 context to Copilot agent
 COTXShowToolUsage=Show tool usage
  ;Toggle to show tool call details in chat
+COTXShowThoughts=Show thoughts
+ ;Toggle to show agent reasoning in chat
+COTXKeepConnectionAlive=Keep Connection Alive
+ ;Toggle to keep Direct Line connection open when form closes
+COTXAgentBehaviour=Agent Behaviour
+ ;Agent behaviour configuration section
 COTXAvailableIn=Available In
  ;Application area availability configuration
 COTXCopilotStudio=Copilot Studio

@@ -4,7 +4,7 @@ All notable changes to the D365 Copilot Toolbox are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [Unreleased]
+## [1.26.2.1] - 2026-02-20
 
 ### Added
 - **Multiple conversation tabs** — users can open up to 8 parallel chat sessions inside a single control instance. Tabs support add, close, rename (double-click label), and switch. Each tab has its own Direct Line connection, WebChat store, and mutable state

@@ -3,8 +3,6 @@
 	<Name>COTXCopilotHostControl</Name>
 	<SourceCode>
 		<Declaration><![CDATA[
-using Newtonsoft.Json.Linq;
-
 /// <summary>
 /// Custom form control that hosts a Copilot chat interface using the M365 Agent SDK.
 /// Token acquisition happens browser-side via MSAL.js (delegated permissions).
@@ -64,7 +62,7 @@ public final class COTXCopilotHostControl extends FormTemplateControl
 
         // User identity
         userId          = this.addProperty(methodstr(COTXCopilotHostControl, parmUserId), Types::String);
-        userName        = this.addProperty(methodstr(COTXCopilotHostControl, parmUserNamen), Types::String);
+        userName        = this.addProperty(methodstr(COTXCopilotHostControl, parmUserName), Types::String);
 
         // ERP context
         legalEntity     = this.addProperty(methodstr(COTXCopilotHostControl, parmLegalEntity), Types::String);
@@ -121,19 +119,27 @@ public final class COTXCopilotHostControl extends FormTemplateControl
         SysUserInfo sysUserInfo = SysUserInfo::find();
         COTXCopilotAgentParameters agentParameters = COTXCopilotAgentParameters::findForApplicationArea(_applicationArea);
 
-        this.parmShowToolCalls(agentParameters.ShowToolUsage ? 'true' : '');
-        this.parmShowThoughts(agentParameters.ShowThoughts ? 'true' : '');
-        this.parmKeepConnectionAlive(agentParameters.KeepConnectionAlive ? 'true' : '');
-
         if (agentParameters)
         {
+            this.parmShowToolCalls(agentParameters.ShowToolUsage ? 'true' : '');
+            this.parmShowThoughts(agentParameters.ShowThoughts ? 'true' : '');
+            this.parmKeepConnectionAlive(agentParameters.KeepConnectionAlive ? 'true' : '');
+
             this.parmAppClientId(agentParameters.ApplicationId);
             this.parmTenantId(agentParameters.TenantId);
             this.parmEnvironmentId(agentParameters.DataverseEnvironment);
             this.parmAgentIdentifier(agentParameters.DataverseSchemaName);
 
             this.parmUserId(sysUserInfo.Id);
-            this.parmUserNamen(sysUserInfo.Id);
+            this.parmUserLanguage(currentUserLanguage());
+            this.parmUserTimeZone(enum2Str(DateTimeUtil::getUserPreferredTimeZone()));
+
+            RecId hcmWorkerRecId = HcmWorker::userId2Worker(curUserId());
+
+            if (hcmWorkerRecId)
+            {
+                this.parmUserName(HcmWorker::find(hcmWorkerRecId).name());
+            }
 
             if (buildControl.parmContextScopeType() == COTXCopilotAgentContextScopeType::Local)
             {
@@ -243,10 +249,10 @@ public final class COTXCopilotHostControl extends FormTemplateControl
 ]]></Source>
 			</Method>
 			<Method>
-				<Name>parmUserNamen</Name>
+				<Name>parmUserName</Name>
 				<Source><![CDATA[
     [FormPropertyAttribute(FormPropertyKind::Value, "UserName")]
-    public str parmUserNamen(str _userName = userName.parmValue())
+    public str parmUserName(str _userName = userName.parmValue())
     {
         if (!prmIsDefault(_userName))
         {

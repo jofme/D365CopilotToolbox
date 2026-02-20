@@ -8,11 +8,7 @@
 		<AxSecurityEntryPointReference>
 			<Name>COTXCopilotAgentParameters</Name>
 			<Grant>
-				<Correct>Allow</Correct>
-				<Create>Allow</Create>
-				<Delete>Allow</Delete>
 				<Read>Allow</Read>
-				<Update>Allow</Update>
 			</Grant>
 			<ObjectName>COTXCopilotAgentParameters</ObjectName>
 			<ObjectType>MenuItemDisplay</ObjectType>
