@@ -46,6 +46,8 @@ copilotControl.sendMessage("What is the status of this order?");
 
 The `sendMessage` method sets the `PendingMessage` form property, which the JavaScript layer picks up and dispatches through WebChat.
 
+> **Important — Multi-tab behaviour:** When the user has multiple conversation tabs open, `sendMessage` is always dispatched to the **active (visible) tab** only. Inactive tabs ignore the pending message. If you need to ensure a specific conversation receives the message, consider prompting the user or documenting which tab should be active.
+
 ## Handling Agent Responses in X++
 
 The `COTXCopilotHostControl` raises an `onAgentResponse` delegate when the agent replies to a programmatically sent message.
@@ -69,7 +71,7 @@ private void handleAgentResponse(COTXCopilotHostControl _sender, str _responseTe
 }
 ```
 
-> **Note:** The `onAgentResponse` delegate only fires for responses to messages initiated via `sendMessage()`. It does not fire for user-typed messages in the chat UI.
+> **Note:** The `onAgentResponse` delegate only fires for responses to messages initiated via `sendMessage()`. It does not fire for user-typed messages in the chat UI. Because `sendMessage` targets the active tab, the response also comes from the active tab's conversation.
 
 ## Accessing the Latest Response
 
@@ -100,3 +102,16 @@ The chat UI is styled via `COTXCopilotHostControl.css`. The style options in `CO
 | `sendBoxBackground` | `#F5F5F5` | Input box background |
 | `sendBoxBorderRadius` | `24` | Input box corner rounding |
 | `bubbleMaxWidth` | `980` | Maximum message width in pixels |
+
+## Multi-Tab Considerations
+
+Each `COTXCopilotHostControl` instance supports up to **8 conversation tabs**. Keep the following in mind when building extensions:
+
+- **Each tab has an independent Direct Line connection** — conversations do not share history or state.
+- **`sendMessage()` and `onAgentResponse`** only interact with the **active tab**. There is no API to target a specific tab from X++.
+- **Each tab’s resources are isolated** — subscriptions, React tree, and mutable state (`waitingForBotReply`, `toolCalls`) are scoped per tab to prevent cross-tab interference.
+- **Dispose tears down all tabs** — when the form closes, every tab is cleaned up (subscriptions disposed, React unmounted, Direct Line ended unless `KeepConnectionAlive` is set).
+
+## Multiple Controls on the Same Page
+
+It is valid to have more than one `COTXCopilotHostControl` on a page (e.g. the global side panel and an embedded form control). Each instance has its own `_tabManager`, its own DOM container area, and its own set of tabs. The MSAL instance cache is shared at the module level to avoid duplicate `PublicClientApplication` objects.

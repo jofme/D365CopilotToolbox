@@ -7,19 +7,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
-- **New chat button** — a restart button ("↻ New chat") in the chat header bar lets users start a fresh conversation without reloading the form
-- **MSAL instance caching** — `PublicClientApplication` instances are now cached per `clientId|tenantId` pair and reused across chat restarts, avoiding the memory overhead of redundant MSAL instances
-- **Chat header bar** — new `ensureChatLayout()` function creates a persistent header bar and inner container, separating chrome from the WebChat React tree
-- **Stale init detection** — a monotonically increasing `_initId` counter prevents race conditions when a restart is triggered while a previous initialisation is still in-flight
-- **Vendor library management** — new `Scripts/Update-VendorLibs.ps1` PowerShell script and `Scripts/vendor-libs.json` manifest for downloading and managing third-party JavaScript libraries (MSAL Browser, WebChat, Copilot Studio Client) from npm
-- **Vendor library AxResources** — MSAL Browser, MSAL Redirect Bridge, WebChat, and Copilot Studio Client are now bundled as D365 AxResource items (`COTXMsalBrowser_JS`, `COTXMsalRedirectBridge_JS`, `COTXMsalRedirectBridge_HTML`, `COTXWebChat_JS`, `COTXCopilotStudioClient_MJS`) instead of being loaded from external CDNs
+- **Multiple conversation tabs** — users can open up to 8 parallel chat sessions inside a single control instance. Tabs support add, close, rename (double-click label), and switch. Each tab has its own Direct Line connection, WebChat store, and mutable state
+- **Tab bar UI** — a persistent tab strip with an add-tab (`+`) button, per-tab close (`×`) button, and a restart (`↻`) button is rendered above the chat area
+- **New chat / restart button** — the restart button (`↻`) in the tab bar tears down the active tab's WebChat session (React tree, Direct Line, subscriptions) and bootstraps a fresh one without reloading the form
+- **MSAL v4 → v5 migration** — upgraded from `@azure/msal-browser` v4 to v5. The new version uses a redirect bridge (`COTXMsalRedirectBridge.html` / `COTXMsalRedirectBridge.js`) for COOP-compatible authentication in popups and iframes
+- **Locally bundled vendor libraries** — MSAL Browser, MSAL Redirect Bridge, WebChat, and Copilot Studio Client are now shipped as D365 AxResource items (`COTXMsalBrowser_JS`, `COTXMsalRedirectBridge_JS`, `COTXMsalRedirectBridge_HTML`, `COTXWebChat_JS`, `COTXCopilotStudioClient_MJS`) instead of being loaded from external CDNs at runtime — eliminating supply-chain risk
+- **Vendor library management** — new `Scripts/Update-VendorLibs.ps1` PowerShell script and `Scripts/vendor-libs.json` manifest for downloading and managing third-party JavaScript libraries from npm
 - **Automated vendor update workflow** — GitHub Actions workflow (`.github/workflows/update-vendor-libs.yml`) runs weekly to check for npm updates and opens a pull request when newer versions are available
+- **MSAL instance caching** — `PublicClientApplication` instances are cached per `clientId|tenantId` pair and reused across chat restarts and tab creation, avoiding duplicate MSAL instances and redundant `initialize()` calls
+- **Chat header layout** — new `ensureChatLayout()` function creates a persistent chrome (tab bar + container area) that is separate from the per-tab WebChat React trees
+- **Stale init detection** — a monotonically increasing `initId` counter per tab prevents race conditions when a restart is triggered while a previous initialisation is still in-flight
+- **Keep connection alive parameter** — new `KeepConnectionAlive` toggle on Agent Parameters; when enabled, `dispose()` skips terminating the Direct Line connection so long-running agents survive form re-opens
+
+### Changed
+- **Browser-side rendering lifecycle** — `tryRender()` replaced by promise-based `waitForDependencies()` → `readControlParameters()` → `ensureChatLayout()` → `createTab()` flow
+- **Per-tab state isolation** — `waitingForBotReply` and `toolCalls` are now scoped to each tab object instead of module-level variables
+- **`PendingMessage` observer** — only the active tab processes X++ pending messages; inactive tabs ignore them
+- **Control parameter reads** — switched from `$dyn.value` to `$dyn.peek` to avoid creating unintended reactive subscriptions
 
 ### Fixed
+- **Multi-tenant MSAL account selection** — `acquireToken` now picks the cached MSAL account whose `tenantId` matches the agent's configured tenant instead of blindly taking `accounts[0]`. Prevents the wrong user identity from being used when both the home-tenant and a cross-tenant account are present in the session-storage cache
 - **Enter key now sends messages** — the chat container intercepts the Enter keydown event (`stopPropagation`) so the D365 form framework no longer captures it; Shift+Enter still inserts a newline
 - **Memory leaks on dispose / restart** — the React component tree is now explicitly unmounted via `ReactDOM.unmountComponentAtNode`, `$dyn.observe` subscriptions are properly disposed, and in-flight initialisations are invalidated
-- **Observable side-effects in readControlParameters** — switched from `$dyn.value` to `$dyn.peek` to avoid creating unintended reactive subscriptions when reading control parameters
-
+- **Proper dispose lifecycle** — `dispose()` now iterates all tabs, disposes subscriptions, unmounts React trees, and ends Direct Line connections (respecting `keepConnectionAlive`)
 ## [1.26.2.0] - 2026-02-15
 
 Initial release of the D365 Copilot Toolbox, establishing the foundation for multi-agent workflows in D365 Finance & Operations. This release focuses on Microsoft Copilot Studio agent integration.

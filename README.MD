@@ -24,13 +24,15 @@ The D365 Copilot Toolbox is designed to enable **multi-agent workflows** within 
 
 The primary solution provides a ready-to-use, performant and light-weight extensible control (`COTXCopilotHostControl`) that embeds Microsoft Copilot Studio agents directly inside any D365 F&O form — either as a **global side panel** or as a **local tab embedded on a specific form**. The control handles:
 
-- **MSAL.js browser-side authentication** — runs the agents in the context of users, with the security model from Copilot Studio
+- **MSAL.js browser-side authentication** — runs the agents in the context of users, with the security model from Copilot Studio (MSAL v5 with locally bundled libraries)
 - **Copilot Studio Agent SDK** — modern M365 Agent SDK implementation (`@microsoft/agents-copilotstudio-client`), that allows for seamless integration to Copilot Studio
+- **Multiple conversation tabs** — open up to 8 parallel chat sessions per control, with add, close, rename, and restart support
 - **Automatic ERP context injection** — legal entity, current form, record, navigation info sent as channel data
 - **Tool call visualization** — optional Adaptive Card display of agent tool execution, and reasoning/thought
 - **Event-driven responses** — X++ delegates let form code react to agent replies - Usage as the control as a Copilot proxy
 - **Application Area Routing** — Configure separate agents per business area (Sales, Inventory, Finance, etc.)
 - **Extensible Architecture** — Add new agents and application areas without modifying core code
+- **Supply-chain safe** — all vendor JavaScript libraries are bundled locally as AxResources, not loaded from external CDNs at runtime
 
 ## Current Solutions
 

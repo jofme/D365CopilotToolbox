@@ -21,7 +21,7 @@ The Copilot Toolbox enables **multi-agent workflows** in D365 Finance & Operatio
 ### Microsoft Entra ID (Azure AD)
 - An **App Registration** configured as a **Single Page Application (SPA)** — public client, no client secret required
 - The app registration needs:
-  - **Redirect URI:** `https://<your-d365-environment-url>` (the origin of your D365 instance)
+  - **Redirect URI:** `https://<your-d365-environment-url>/resources/html/COTXMsalRedirectBridge.html` (the MSAL v5 redirect bridge page)
   - **API Permission:** Power Platform API > **Application** > `CopilotStudio.Copilots.Invoke` (requires admin consent)
 - You will need:
   - **Application (client) ID**
@@ -60,10 +60,10 @@ Navigate to **System Administration > Users** and assign the appropriate roles:
 | **Entra ID App Registration** | The SPA app registration client ID | `87654321-dcba-...` |
 | **Agent Schema Name** | The Copilot Studio agent schema name | `cr123_myAgent` |
 | **Dataverse Environment** | The Dataverse environment GUID | `a1b2c3d4-1234-5678-90ab-cdef12345678` |
-| **Send Global FSCM Context** | Enable to send navigation context to the agent | `Yes` |
-| **Show tool usage** | `COTXCopilotHostShowToolUsage` | When enabled (`Yes`), tool call details are displayed as Adaptive Cards in the chat, showing which tools the agent invoked as a debug/progress aid. This may surface internal implementation details. |
-| **Show thoughts** | `COTXCopilotHostShowThoughts` | When enabled (`Yes`), intermediate agent progress/thought summaries are rendered as subtle chat bubbles to help with debugging and monitoring. This may expose sensitive or internal model information. |
-| **Keep connection alive option** | When enabled, `dispose()` skips terminating the Direct Line connection (A work-around to keep long-running agents alive) |
+| **Send Global FSCM Context** | Send navigation context (form, record, legal entity) to the agent | `Yes` |
+| **Show tool usage** | Display tool call details as Adaptive Cards in the chat (debug aid) | `No` |
+| **Show thoughts** | Show agent reasoning/thought bubbles in the chat (debug aid) | `No` |
+| **Keep connection alive** | Keep the Direct Line connection open when the form closes (for long-running agents) | `No` |
 
 ### 3. Map Application Areas
 
@@ -83,7 +83,23 @@ On the **Available In** tab of the Agent Parameters form:
 4. The Copilot chat panel should appear on the right side
 5. Type a message to verify the connection
 
-> Use the **↻ New chat** button in the chat header to start a fresh conversation at any time.
+> **Tip:** Press **Enter** to send a message. Use **Shift+Enter** to insert a newline.
+
+## Using Conversation Tabs
+
+The Copilot chat supports **multiple conversation tabs**, allowing you to run parallel conversations with the agent.
+
+| Action | How |
+|--------|-----|
+| **Open a new tab** | Click the **+** button in the tab bar |
+| **Switch tabs** | Click any tab button |
+| **Close a tab** | Click the **×** on the tab (only visible when more than one tab is open) |
+| **Rename a tab** | Double-click the tab label, type a new name, then press Enter or click away |
+| **Restart a conversation** | Click the **↻** button to tear down and re-create the active tab's session |
+
+> **Limits:** Up to **8 tabs** can be open at once per control instance. Each tab has its own Direct Line connection and chat history.
+
+> **Note:** Messages sent programmatically from X++ (via `sendMessage`) are always dispatched to the **active tab** only.
 
 
 ## Troubleshooting
@@ -92,10 +108,12 @@ On the **Available In** tab of the Agent Parameters form:
 |-------|-------|---------|
 | Side panel is empty / no chat | Missing or incorrect agent parameters | Verify all fields in Agent Parameters |
 | Authentication popup appears | Expected on first use | Sign in; subsequent requests use silent token acquisition |
-| "AADSTS..." error in popup | App registration misconfigured | Check redirect URI matches your D365 origin, verify API permissions |
+| "AADSTS..." error in popup | App registration misconfigured | Check redirect URI points to the redirect bridge (`/resources/html/COTXMsalRedirectBridge.html`), verify API permissions |
 | No context sent to agent | `Send Global FSCM Context` is disabled | Enable it in Agent Parameters |
 | Control doesn't appear on form | Missing security role | Assign `Copilot User` or `Copilot Administrator` role |
-| Conversation seems stuck or stale | WebChat session issue | Click the **↻ New chat** button in the chat header to start a fresh session |
+| Conversation seems stuck or stale | WebChat session issue | Click the **↻** restart button in the tab bar, or close and re-open the tab |
+| Cannot open more tabs | Maximum of 8 tabs reached | Close an existing tab before opening a new one |
+| Wrong user identity in multi-tenant setup | MSAL picks the wrong cached account | Ensure the Entra ID Tenant on Agent Parameters matches the agent's tenant; the control filters by tenant ID automatically |
 
 ## Next Steps
 
