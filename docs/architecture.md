@@ -46,9 +46,11 @@ graph TB
 
 | File | Responsibility |
 |------|---------------|
-| `COTXCopilotHostControl.html` | Loads MSAL.js 4.13.1, WebChat 4.18.0, and the main JS file. Contains the root `<div>` for the control. |
-| `COTXCopilotHostControl.js` | Orchestrates the entire browser-side flow: MSAL token acquisition (with per-client instance caching), Copilot Studio SDK connection, chat layout creation (header bar + inner container), WebChat rendering, chat restart lifecycle, context injection middleware, tool call card rendering, and D365 extensible control registration. |
-| `COTXCopilotHostControl.css` | Styles the chat interface — header bar with restart button, chat container layout, bubble appearance, tables, lists, scrollbars, and headings — to match a modern Copilot aesthetic. |
+| `COTXCopilotHostControl.html` | Loads MSAL Browser (v5, locally bundled), WebChat 4.18.0 (CDN), and the main JS file. Contains the root `<div>` for the control. |
+| `COTXCopilotHostControl.js` | Orchestrates the entire browser-side flow: MSAL token acquisition (with per-client instance caching and multi-tenant account selection), Copilot Studio SDK connection, tab manager (create / close / rename / switch tabs), chat layout creation (tab bar + per-tab containers), WebChat rendering, chat restart lifecycle, context injection middleware, tool call card rendering, thought bubble injection, and D365 extensible control registration. |
+| `COTXCopilotHostControl.css` | Styles the chat interface — tab bar (buttons, close, rename input, add/restart), per-tab chat containers, bubble appearance, tables, lists, scrollbars, and headings — to match a modern Copilot aesthetic. |
+| `COTXMsalRedirectBridge.html` | MSAL v5 redirect bridge HTML container for COOP-compatible popup/iframe authentication. |
+| `COTXMsalRedirectBridge.js` | Companion script for the redirect bridge — handles token redirect responses in popup windows. |
 
 ### Data Model
 
@@ -79,21 +81,52 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    A["JS init()"] --> B["tryRender() — retries up to 60 frames"]
-    B --> L["ensureChatLayout(element) — header bar + inner container"]
-    L --> LK["Attach Enter key listener (stopPropagation)"]
+    A["JS init()"] --> B["waitForDependencies() — polls up to 60 frames"]
+    B --> P["readControlParameters(data)"]
+    P --> L["ensureChatLayout(element) — tab bar + container area"]
     L --> LR["Wire restart button → restartChat()"]
-    L --> C["acquireToken(appClientId, tenantId)"]
+    L --> LA["Wire add-tab button → createTab()"]
+    L --> T["createTab() — first conversation tab"]
+    T --> IW["initializeWebChat(container, data, params, tab)"]
+    IW --> C["acquireToken(appClientId, tenantId)"]
     C --> C1["MSAL instance cached per clientId|tenantId"]
-    C1 --> C2["Try silent — session cache → access token"]
+    C1 --> C2["Try silent — tenant-matched account → token"]
     C1 --> C3["Fallback: popup → access token"]
     C --> D["createCopilotConnection(token, envId, agentId)"]
     D --> D1["CopilotStudioWebChat.createConnection() → DirectLine"]
-    D --> E["WebChat.renderWebChat(directLine, store, chatContainer)"]
+    D --> E["WebChat.renderWebChat(directLine, store, tab.container)"]
     E --> E1["Store middleware intercepts"]
     E1 --> E2["Outgoing messages: injects ERP context"]
     E1 --> E3["Incoming messages: captures agent responses"]
     E1 --> E4["Events: renders tool call Adaptive Cards"]
+    E1 --> E5["Thoughts: injects chain-of-thought bubbles"]
+    E --> O["observePendingMessages() — only active tab"]
+```
+
+### 2a. Tab Lifecycle
+
+```mermaid
+flowchart TD
+    ADD["+  Add Tab button"] --> CT["createTab(data, params, self)"]
+    CT --> CHK{"tabOrder.length < maxTabs (8)?"}
+    CHK -- No --> WARN["Console warning — limit reached"]
+    CHK -- Yes --> MKID["Generate tab ID + name"]
+    MKID --> DOM["Create tab button + chat container"]
+    DOM --> ENT["Attach Enter key listener (stopPropagation)"]
+    DOM --> SW["switchToTab(tabId) — show container, highlight button"]
+    SW --> IW2["initializeWebChat() — token → connection → render"]
+
+    CLOSE["×  Close Tab button"] --> CL["closeTabById(tabId)"]
+    CL --> DISP["Dispose subscription, unmount React, end DirectLine"]
+    DISP --> RM["Remove DOM + tab manager entry"]
+    RM --> NEXT["switchToTab(nearest remaining tab)"]
+
+    RESTART["↻  Restart button"] --> RC["restartChat(data, self)"]
+    RC --> TEAR["Dispose subscription + end DirectLine + unmount React"]
+    TEAR --> REINIT["initializeWebChat() — fresh session in same tab"]
+
+    RENAME["Double-click tab label"] --> INP["Inline rename input"]
+    INP --> BLUR["On blur / Enter → update tab.name"]
 ```
 
 ### 3. Context Flow
@@ -143,20 +176,22 @@ sequenceDiagram
 ```mermaid
 sequenceDiagram
     participant Agent as Copilot Studio Agent
-    participant WebChat as WebChat Store
+    participant WebChat as WebChat Store (per tab)
     participant JS as Browser JS
     participant Control as COTXCopilotHostControl (X++)
     participant Form as Form Event Handlers
 
     Agent->>WebChat: Sends reply
     WebChat->>JS: Captures incoming bot message
-    alt waitingForBotReply (X++ initiated)
+    alt tabState.waitingForBotReply (X++ initiated on active tab)
         JS->>Control: Calls RaiseAgentResponse command
         Control->>Control: Sets parmAgentResponse property
         Control->>Form: Fires onAgentResponse delegate
         Form->>Form: Event handlers react
     end
 ```
+
+> **Note:** Only the **active tab** processes `PendingMessage` from X++ and fires `onAgentResponse`. Inactive tabs ignore pending messages.
 
 ## Context Data Structure
 
@@ -195,6 +230,10 @@ The ERP context is injected into the `channelData.context` of every outgoing Web
 | **Custom form pattern for side panel** | Aside pane forms require the `Custom` pattern and `setDisplayTarget(AsidePane)` before `super()` — this is per Microsoft guidance. |
 | **Keep connection alive option** | When enabled, `dispose()` skips terminating the Direct Line connection. This avoids the latency of re-authenticating and reconnecting when the form is re-opened quickly. The flag is read once after full initialization — it is not re-evaluated at dispose time. |
 | **MSAL instance caching** | A module-scoped `_msalCache` object stores `PublicClientApplication` instances keyed by `clientId|tenantId`. This prevents creating duplicate MSAL instances across chat restarts or multiple control instances on the same page, reducing memory overhead and avoiding redundant `initialize()` calls. |
+| **Multi-tenant account selection** | When multiple accounts exist in the MSAL session-storage cache (e.g. home-tenant + cross-tenant), `acquireToken` filters by `tenantId` to pick the correct identity rather than blindly using `accounts[0]`. This is critical for multi-tenant agent configurations. |
+| **Tab manager per control instance** | Each `COTXCopilotHostControl` instance owns its own `_tabManager` object (tabs, activeTabId, tabOrder, maxTabs). This avoids collisions when multiple controls exist on the same page (e.g. side panel + embedded form control). |
+| **Per-tab state isolation** | `waitingForBotReply` and `toolCalls` are scoped to each tab's `state` object, not module-level. This prevents cross-tab interference when multiple conversations are active. |
+| **MSAL v5 redirect bridge** | MSAL v5 requires a redirect bridge page for COOP-compatible popup authentication. The bridge (`COTXMsalRedirectBridge.html`) is bundled as an AxResource and handles token redirect responses in a separate window context. |
 
 ## External Dependencies
 

@@ -56,7 +56,15 @@ Thank you for your interest in contributing! We'd **love** your help making D365
 ### CSS Standards
 
 - Scope all selectors under `[data-dyn-role="COTXCopilotHostControl"]`
+- Use the `.cotx-` prefix for all custom CSS classes (e.g. `.cotx-tab-bar`, `.cotx-tab-btn`, `.cotx-chat-container`)
+- Tab-bar related selectors use the `.cotx-tab-` prefix (e.g. `.cotx-tab-active`, `.cotx-tab-close`, `.cotx-tab-rename-input`)
 - Use px units for predictable sizing within the D365 form chrome
+
+### JavaScript Standards
+
+- Use `LOG_PREFIX` (`'COTXCopilotHostControl'`) for all `console.log/debug/warn/error` calls
+- Add JSDoc comments to all functions (parameters, return type, description)
+- Keep per-tab state on the tab object (`tab.state`); avoid module-level mutable state
 
 ## Pull Request Process
 
@@ -71,6 +79,8 @@ Thank you for your interest in contributing! We'd **love** your help making D365
    - Build succeeds with no errors
    - BP checks pass (run Best Practices analyzer in Visual Studio)
    - Functional testing on a development environment
+   - If touching JS/CSS: test with multiple conversation tabs open, test restart, test close-last-tab behaviour
+   - If touching MSAL/auth: test with both single-tenant and multi-tenant configurations
 
 4. **Commit with descriptive messages:**
    ```

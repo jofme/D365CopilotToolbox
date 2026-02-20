@@ -10,30 +10,31 @@ Navigate to **System Administration > Setup > Copilot Toolbox > Agent Parameters
 
 #### Entra ID Settings
 
-| Name |  Required | Description |
-|------|-----------|-------------|
+| Name | Required | Description |
+|------|----------|-------------|
 | **Entra ID Tenant** | Yes | The Azure AD / Entra ID tenant GUID. Found in Azure Portal > Microsoft Entra ID > Overview. |
 | **Entra ID App Registration** | Yes | The Application (client) ID of the SPA app registration. Found in Azure Portal > App registrations. |
 
 #### Dataverse Settings
 
-| name |  Required | Description |
-|-------|----------|-------------|
+| Name | Required | Description |
+|------|----------|-------------|
 | **Agent Schema Name** | Yes | The schema name of your Copilot Studio agent. Found in Copilot Studio > Agent settings > Advanced. Format: `cr123_agentName` |
 | **Dataverse Environment** | Yes | The Dataverse environment GUID. Found in Power Platform Admin Center > Environments > [Environment Name] > Environment details, or in Copilot Studio agent settings. Format: `a1b2c3d4-1234-5678-90ab-cdef12345678` |
 
 #### Context Settings
 
-| Name |  Description |
-|------|--------------|
+| Name | Description |
+|------|-------------|
 | **Send Global FSCM Context** | When enabled (`Yes`), the global side panel sends ERP context (legal entity, current form, record info) with each message to the agent. |
 
 #### Agent Behaviour Settings
-| Name |  Description |
-|------|--------------|
-| **Show tool usage** |  When enabled (`Yes`), tool call details are displayed as Adaptive Cards in the chat, showing which tools the agent invoked as a debug/progress aid. This may surface internal implementation details. |
+
+| Name | Description |
+|------|-------------|
+| **Show tool usage** | When enabled (`Yes`), tool call details are displayed as Adaptive Cards in the chat, showing which tools the agent invoked as a debug/progress aid. This may surface internal implementation details. |
 | **Show thoughts** | When enabled (`Yes`), intermediate agent progress/thought summaries are rendered as subtle chat bubbles to help with debugging and monitoring. This may expose sensitive or internal model information. |
-| **Keep connection alive option** | When enabled, `dispose()` skips terminating the Direct Line connection (A work-around to keep long-running agents alive) |
+| **Keep connection alive** | When enabled (`Yes`), the Direct Line connection is preserved when the form closes. This avoids re-authentication latency when the form is re-opened quickly. Useful as a work-around for long-running agents. |
 
 ### Available In Tab
 
@@ -56,7 +57,7 @@ This tab maps application areas to the current agent configuration. Each row ass
 3. Configure:
    - **Name:** `D365 Copilot Toolbox` (or your preferred name)
    - **Supported account types:** Accounts in this organizational directory only (Single tenant)
-   - **Redirect URI:** Select **Single-page application (SPA)** and enter your D365 environment origin URL (e.g., `https://yourenv.operations.dynamics.com`)
+   - **Redirect URI:** Select **Single-page application (SPA)** and enter the redirect bridge URL: `https://yourenv.operations.dynamics.com/resources/html/COTXMsalRedirectBridge.html`
 4. Click **Register**
 
 ### Step 2: Configure API Permissions
@@ -125,4 +126,12 @@ You can configure multiple agent parameter records, each connected to a differen
 | Inventory Agent | `cr789_invAgent` | InventOnhand |
 
 When a form control requests the `SalesTable` area, it gets the Sales Agent. When it requests an unmapped area, it falls back to the General Assistant.
+
+### Multi-Tenant Agents
+
+When different agents belong to different Entra ID tenants, create a separate app registration per tenant and a separate Agent Parameters record for each. The control’s MSAL logic automatically selects the cached account whose `tenantId` matches the agent’s configured tenant, preventing cross-tenant identity issues.
+
+The tab limit of 8 is a built-in safeguard to manage browser memory and CPU. Each tab creates a separate React tree, Redux store, and WebSocket connection.
+
+> **Tip:** Users can rename tabs by double-clicking the tab label. This is useful when running parallel conversations for different topics (e.g. “Sales Order Query” vs “Inventory Check”).
 
