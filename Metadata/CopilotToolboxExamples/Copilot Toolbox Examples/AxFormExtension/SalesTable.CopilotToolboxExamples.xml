@@ -37,7 +37,7 @@
 						</FormControlExtension>
 					</AxFormControl>
 				</Controls>
-				<Caption>Copilot Agent</Caption>
+				<Caption>@CopilotToolbox:COTXCopilotAgent</Caption>
 			</FormControl>
 			<Parent>LineViewTab</Parent>
 			<PositionType>Begin</PositionType>

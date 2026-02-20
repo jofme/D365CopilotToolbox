@@ -15,6 +15,8 @@
 		<d2p1:string>ApplicationFoundation</d2p1:string>
 		<d2p1:string>ApplicationPlatform</d2p1:string>
 		<d2p1:string>ApplicationSuite</d2p1:string>
+		<d2p1:string>Directory</d2p1:string>
+		<d2p1:string>PersonnelCore</d2p1:string>
 	</ModuleReferences>
 	<Name>Copilot Toolbox</Name>
 	<Publisher>ERPilots</Publisher>
@@ -22,5 +24,5 @@
 	<VersionBuild>2</VersionBuild>
 	<VersionMajor>1</VersionMajor>
 	<VersionMinor>26</VersionMinor>
-	<VersionRevision>0</VersionRevision>
+	<VersionRevision>1</VersionRevision>
 </AxModelInfo>

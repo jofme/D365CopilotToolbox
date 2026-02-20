@@ -31,8 +31,6 @@ public final class COTXCopilotHostFormContext
 				<Source><![CDATA[
     protected void new(FormRun _formRun)
     {
-        //TODO: Initialize this from cache
-
         formRun     = _formRun;
         curFormName = _formRun.name();
         formCaption = formRun.design().caption();
@@ -59,7 +57,7 @@ public final class COTXCopilotHostFormContext
 
             tableName = sysDictTable.labelDefined() ? sysDictTable.label() : sysDictTable.name();
             
-            if (SysDictTable.titleField1())
+            if (sysDictTable.titleField1())
             {
                 naturalKeyId = sysDictTable.titleField1();
                 SysDictField sysDictField = new SysDictField(sysDictTable.id(), naturalKeyId);

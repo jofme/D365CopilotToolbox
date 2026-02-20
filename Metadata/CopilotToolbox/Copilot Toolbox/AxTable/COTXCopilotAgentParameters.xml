@@ -139,6 +139,7 @@ internal class COTXCopilotAgentParameters extends common
 	<CreatedDateTime>Yes</CreatedDateTime>
 	<ModifiedBy>Yes</ModifiedBy>
 	<ModifiedDateTime>Yes</ModifiedDateTime>
+	<ReplacementKey>NameIdx</ReplacementKey>
 	<SaveDataPerCompany>No</SaveDataPerCompany>
 	<DeleteActions />
 	<FieldGroups>
@@ -160,7 +161,11 @@ internal class COTXCopilotAgentParameters extends common
 		<AxTableFieldGroup>
 			<Name>AutoIdentification</Name>
 			<AutoPopulate>Yes</AutoPopulate>
-			<Fields />
+			<Fields>
+				<AxTableFieldGroupField>
+					<DataField>Name</DataField>
+				</AxTableFieldGroupField>
+			</Fields>
 		</AxTableFieldGroup>
 		<AxTableFieldGroup>
 			<Name>AutoSummary</Name>
@@ -217,7 +222,7 @@ internal class COTXCopilotAgentParameters extends common
 		</AxTableFieldGroup>
 		<AxTableFieldGroup>
 			<Name>AgentBehaviour</Name>
-			<Label>Agent Behaviour</Label>
+			<Label>@CopilotToolbox:COTXAgentBehaviour</Label>
 			<Fields>
 				<AxTableFieldGroupField>
 					<DataField>ShowToolUsage</DataField>
@@ -293,7 +298,7 @@ internal class COTXCopilotAgentParameters extends common
 			<Name>ShowThoughts</Name>
 			<ExtendedDataType>NoYesId</ExtendedDataType>
 			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
-			<Label>Show thoughs</Label>
+			<Label>@CopilotToolbox:COTXShowThoughts</Label>
 			<EnumType>NoYes</EnumType>
 		</AxTableField>
 		<AxTableField xmlns=""
@@ -301,7 +306,7 @@ internal class COTXCopilotAgentParameters extends common
 			<Name>KeepConnectionAlive</Name>
 			<ExtendedDataType>NoYesId</ExtendedDataType>
 			<IgnoreEDTRelation>Yes</IgnoreEDTRelation>
-			<Label>Keep Connection Alive</Label>
+			<Label>@CopilotToolbox:COTXKeepConnectionAlive</Label>
 			<EnumType>NoYes</EnumType>
 		</AxTableField>
 	</Fields>
@@ -309,7 +314,7 @@ internal class COTXCopilotAgentParameters extends common
 	<Indexes>
 		<AxTableIndex>
 			<Name>NameIdx</Name>
-			<AllowDuplicates>Yes</AllowDuplicates>
+			<AlternateKey>Yes</AlternateKey>
 			<Fields>
 				<AxTableIndexField>
 					<DataField>Name</DataField>

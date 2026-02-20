@@ -103,11 +103,6 @@
       <Name>COTXCopilotSendGlobalContext</Name>
       <Link>EDT Enums\COTXCopilotSendGlobalContext</Link>
     </Content>
-    <Content Include="AxEdt\COTXDirectLineSecretKey">
-      <SubType>Content</SubType>
-      <Name>COTXDirectLineSecretKey</Name>
-      <Link>Extended Data Types\COTXDirectLineSecretKey</Link>
-    </Content>
     <Content Include="AxEnum\COTXCopilotAgentApplicationArea">
       <SubType>Content</SubType>
       <Name>COTXCopilotAgentApplicationArea</Name>
