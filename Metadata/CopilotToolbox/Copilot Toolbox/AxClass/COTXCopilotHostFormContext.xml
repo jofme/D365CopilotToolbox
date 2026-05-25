@@ -121,6 +121,12 @@ public final class COTXCopilotHostFormContext
 				<Source><![CDATA[
     private void setKeyValue()
     {
+        if (!naturalKeyId || !rootFormRecord)
+        {
+            naturalValue = '';
+            return;
+        }
+
         naturalValue = any2Str(rootFormRecord.(naturalKeyId));
     }
 
